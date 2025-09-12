@@ -1,0 +1,205 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 3 * * *'  # Daily at 3 AM UTC
+
+env:
+  LEAN_VERSION: "4.12.0"
+
+jobs:
+  dependency-scan:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Lean ${{ env.LEAN_VERSION }}
+      uses: leanprover/lean4-action@v2
+      with:
+        lean-version: ${{ env.LEAN_VERSION }}
+
+    - name: Cache Lake dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          .lake
+          lake-packages
+        key: ubuntu-${{ env.LEAN_VERSION }}-${{ hashFiles('lake-manifest.json') }}
+        restore-keys: |
+          ubuntu-${{ env.LEAN_VERSION }}-
+
+    - name: Install dependencies
+      run: lake update
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  code-scan:
+    name: Code Security Scan
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Lean ${{ env.LEAN_VERSION }}
+      uses: leanprover/lean4-action@v2
+      with:
+        lean-version: ${{ env.LEAN_VERSION }}
+
+    - name: Cache Lake dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          .lake
+          lake-packages
+        key: ubuntu-${{ env.LEAN_VERSION }}-${{ hashFiles('lake-manifest.json') }}
+        restore-keys: |
+          ubuntu-${{ env.LEAN_VERSION }}-
+
+    - name: Install dependencies
+      run: lake update
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: lean
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
+  license-scan:
+    name: License Compliance Scan
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Lean ${{ env.LEAN_VERSION }}
+      uses: leanprover/lean4-action@v2
+      with:
+        lean-version: ${{ env.LEAN_VERSION }}
+
+    - name: Cache Lake dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          .lake
+          lake-packages
+        key: ubuntu-${{ env.LEAN_VERSION }}-${{ hashFiles('lake-manifest.json') }}
+        restore-keys: |
+          ubuntu-${{ env.LEAN_VERSION }}-
+
+    - name: Install dependencies
+      run: lake update
+
+    - name: Run license scan
+      run: |
+        lake exe uprove-license-scan
+        if [ $? -ne 0 ]; then
+          echo "License compliance issues found"
+          exit 1
+        fi
+
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Run TruffleHog OSS
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+        extra_args: --debug --only-verified
+
+  network-scan:
+    name: Network Security Scan
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Lean ${{ env.LEAN_VERSION }}
+      uses: leanprover/lean4-action@v2
+      with:
+        lean-version: ${{ env.LEAN_VERSION }}
+
+    - name: Cache Lake dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          .lake
+          lake-packages
+        key: ubuntu-${{ env.LEAN_VERSION }}-${{ hashFiles('lake-manifest.json') }}
+        restore-keys: |
+          ubuntu-${{ env.LEAN_VERSION }}-
+
+    - name: Install dependencies
+      run: lake update
+
+    - name: Build
+      run: lake build
+
+    - name: Run network security tests
+      run: |
+        lake exe uprove-network-scan
+        if [ $? -ne 0 ]; then
+          echo "Network security issues found"
+          exit 1
+        fi
+
+  security-report:
+    name: Security Report
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, code-scan, license-scan, secret-scan, network-scan]
+    if: always()
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Generate security report
+      run: |
+        echo "# Security Report" > security-report.md
+        echo "Generated: $(date)" >> security-report.md
+        echo "" >> security-report.md
+        echo "## Dependency Scan" >> security-report.md
+        echo "Status: ${{ needs.dependency-scan.result }}" >> security-report.md
+        echo "" >> security-report.md
+        echo "## Code Scan" >> security-report.md
+        echo "Status: ${{ needs.code-scan.result }}" >> security-report.md
+        echo "" >> security-report.md
+        echo "## License Scan" >> security-report.md
+        echo "Status: ${{ needs.license-scan.result }}" >> security-report.md
+        echo "" >> security-report.md
+        echo "## Secret Scan" >> security-report.md
+        echo "Status: ${{ needs.secret-scan.result }}" >> security-report.md
+        echo "" >> security-report.md
+        echo "## Network Scan" >> security-report.md
+        echo "Status: ${{ needs.network-scan.result }}" >> security-report.md
+
+    - name: Upload security report
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-report
+        path: security-report.md
+        retention-days: 30

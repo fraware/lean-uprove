@@ -1,0 +1,26 @@
+# Lean build artifacts
+build/
+lake-packages/
+.lake/
+
+# Lean cache
+.olean
+.trace
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Benchmark results
+benchmark-results.txt

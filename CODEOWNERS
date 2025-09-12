@@ -1,0 +1,34 @@
+# Code owners for lean-uprove project
+
+# Core planner and tactics
+/Uprove/Core.lean @fraware
+/Uprove/Tactics.lean @fraware
+/Uprove/Planner.lean @fraware
+
+# Pattern database and attributes
+/Uprove/Patterns.lean @fraware @leanprover-community/category-theory
+/Uprove/Attributes.lean @fraware @leanprover-community/category-theory
+
+# Configuration and telemetry
+/Uprove/Configuration.lean @fraware
+/Uprove/Telemetry.lean @fraware
+
+# Performance and benchmarking
+/Benchmark.lean @fraware @leanprover-community/performance
+/Test.lean @fraware @leanprover-community/testing
+
+# CI/CD and infrastructure
+/.github/ @fraware @leanprover-community/infrastructure
+
+# Documentation
+/docs/ @fraware @leanprover-community/documentation
+/README.md @fraware
+/CHANGELOG.md @fraware
+
+# Project configuration
+/lakefile.lean @fraware
+/lake-manifest.json @fraware
+/lean-toolchain @fraware
+
+# Examples and tests
+/examples/ @fraware @leanprover-community/examples
