@@ -2,88 +2,134 @@ name: CI
 
 on:
   push:
-    branches: ["main"]
+    branches: [ main, develop ]
   pull_request:
-    branches: ["main"]
-  workflow_dispatch:
+    branches: [ main ]
 
 jobs:
-  build-and-test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        lean_version: ["4.12.0", "4.11.0"]
-
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Lean ${{ matrix.lean_version }}
-        uses: leanprover/lean-action@v1
-        with:
-          lean_version: ${{ matrix.lean_version }}
-
-      - name: Cache Lake packages
-        uses: actions/cache@v3
-        with:
-          path: .lake/packages
-          key: ${{ runner.os }}-lake-${{ hashFiles('lake-manifest.json') }}
-          restore-keys: |
-            ${{ runner.os }}-lake-
-
-      - name: Lake Update
-        run: lake update
-
-      - name: Build Project
-        run: lake build
-
-      - name: Run Basic Tests
-        run: lake exe test
-
-      - name: Run Simple Test Suite
-        run: lake exe uprove-test-simple
-
-      - name: Run Production Test Suite
-        run: lake exe uprove-test-production
-
-      - name: Run Performance Validation
-        run: lake exe uprove-performance-validation
-
-  security-scan:
+  test:
+    name: Test
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v4
-      - uses: leanprover/lean-action@v1
+    - name: Checkout
+      uses: actions/checkout@v4
       
-      - name: Run License Scan
-        run: lake exe uprove-license-scan
-
-      - name: Run Network Scan
-        run: lake exe uprove-network-scan
-
-  doc-generation:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: leanprover/lean-action@v1
+    - name: Set up Lean 4
+      uses: leanprover/lean4@v4.12.0
       
-      - name: Generate Docs
-        run: lake build docs
-
-  release:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    needs: [build-and-test, security-scan, doc-generation]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: leanprover/lean-action@v1
-      
-      - name: Build Release Artifacts
-        run: lake build release
+    - name: Install dependencies
+      run: |
+        lake update
+        lake build
         
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            ./build/release/*
-            ./build/doc/*
+    - name: Run tests
+      run: |
+        lake test
+        lake exe test
+        lake exe uprove-test-simple
+        lake exe uprove-test-minimal-core
+        lake exe uprove-test-production
+        lake exe uprove-test-real
+        
+    - name: Run performance validation
+      run: |
+        lake exe uprove-performance-validation
+        lake exe uprove-sla-validation
+        
+    - name: Run security scans
+      run: |
+        lake exe uprove-license-scan
+        lake exe uprove-network-scan
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Set up Lean 4
+      uses: leanprover/lean4@v4.12.0
+      
+    - name: Build
+      run: |
+        lake update
+        lake build
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          build/
+          lake-packages/
+        retention-days: 30
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest,enable={{is_default_branch}}
+          
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  validate-installation:
+    name: Validate Installation
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Set up Lean 4
+      uses: leanprover/lean4@v4.12.0
+      
+    - name: Test installation script
+      run: |
+        chmod +x scripts/install.sh
+        ./scripts/install.sh --help
+        
+    - name: Test Makefile
+      run: |
+        make help
+        make build
+        make test
+        make clean

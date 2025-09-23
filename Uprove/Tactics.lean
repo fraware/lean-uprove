@@ -1,7 +1,11 @@
-import Uprove.Core
+import Lean
 import Lean.Elab.Tactic
 import Lean.Meta
 import Lean.Elab.Command
+import Uprove.Core
+import Uprove.Configuration
+
+open Lean Elab Tactic
 
 namespace Uprove
 
@@ -35,8 +39,11 @@ macro_rules
     let config := $cfg
     Uprove.uproveExplainTactic config)
 
+-- Default configuration
+def defaultConfig : UproveOptions := {}
+
 -- Enhanced core tactic implementation with proper error handling
-def uproveTactic (config : UproveConfig) : Lean.TacticM Unit := do
+def uproveTactic (config : UproveOptions) : TacticM Unit := do
   let startTime ← IO.monoMsNow
   let goal ← Lean.Meta.getMainTarget
 
@@ -45,20 +52,28 @@ def uproveTactic (config : UproveConfig) : Lean.TacticM Unit := do
     Lean.logInfo s!"Uprove: analyzing goal: {goal}"
 
   -- Get registered patterns and isomorphisms
-  let patterns ← unsafeIO getRegisteredPatterns
-  let isos ← unsafeIO getRegisteredIsomorphisms
+  let patterns ← liftM (getRegisteredPatterns)
+  let isos ← liftM (getRegisteredIsomorphisms)
 
   -- Normalize the goal using isomorphism rewrites
   let normalizedGoal := normalizeExpression goal isos
 
   -- Try to match against patterns
   match matchUniversalProperty normalizedGoal patterns with
-  | some match => do
+  | some patternMatch => do
     if config.trace then
-      Lean.logInfo s!"Matched pattern: {match.up.name} (confidence: {match.confidence})"
+      Lean.logInfo s!"Matched pattern: {patternMatch.up.name} (confidence: {patternMatch.confidence})"
 
     -- Execute the proof plan with safety limits
-    safePlanProof match config
+    safePlanProof patternMatch {
+      maxSteps := config.maxSteps,
+      timeout := config.timeout,
+      simpSet := config.simpSet,
+      trace := config.trace,
+      strict := config.strict,
+      fallback := config.fallback,
+      enableTelemetry := config.enableTelemetry
+    }
 
     -- Record telemetry if enabled
     if config.enableTelemetry then
@@ -74,7 +89,7 @@ def uproveTactic (config : UproveConfig) : Lean.TacticM Unit := do
         "4.12.0" -- lean version
         "0.1.0" -- mathlib version
         endTime
-      unsafeIO (recordTelemetry telemetryData)
+      recordTelemetry telemetryData
 
   | none => do
     if config.trace then
@@ -106,15 +121,15 @@ def uproveTactic (config : UproveConfig) : Lean.TacticM Unit := do
             Lean.logInfo s!"Fallback tactic {tacticName} failed: {e.toMessageData}"
 
 -- Enhanced explainer mode implementation with detailed output
-def uproveExplainTactic (config : UproveConfig) : Lean.TacticM Unit := do
+def uproveExplainTactic (config : UproveOptions) : TacticM Unit := do
   let startTime ← IO.monoMsNow
   let goal ← Lean.Meta.getMainTarget
 
   -- Always log the goal in explainer mode
   Lean.logInfo s!"🔍 Uprove Analysis for goal: {goal}"
 
-  let patterns ← unsafeIO getRegisteredPatterns
-  let isos ← unsafeIO getRegisteredIsomorphisms
+  let patterns ← liftM (getRegisteredPatterns)
+  let isos ← liftM (getRegisteredIsomorphisms)
 
   -- Normalize the goal using isomorphism rewrites
   let normalizedGoal := normalizeExpression goal isos
@@ -123,19 +138,27 @@ def uproveExplainTactic (config : UproveConfig) : Lean.TacticM Unit := do
 
   -- Try to match against patterns
   match matchUniversalProperty normalizedGoal patterns with
-  | some match => do
-    let plan := generateProofPlan match config
-    let structuredPlan := generateStructuredPlan match config
+  | some patternMatch => do
+    let plan := generateProofPlan patternMatch config
+    let structuredPlan := generateStructuredPlan patternMatch config
 
     -- Log detailed analysis
-    Lean.logInfo s!"🎯 Pattern Match: {match.up.name}"
-    Lean.logInfo s!"📊 Confidence: {match.confidence}"
-    Lean.logInfo s!"🔧 Substitutions: {match.substitutions}"
+    Lean.logInfo s!"🎯 Pattern Match: {patternMatch.up.name}"
+    Lean.logInfo s!"📊 Confidence: {patternMatch.confidence}"
+    Lean.logInfo s!"🔧 Substitutions: {patternMatch.substitutions}"
     Lean.logInfo s!"📋 Proof Plan:\n{plan}"
     Lean.logInfo s!"📄 Structured Plan: {structuredPlan}"
 
     -- Execute the proof plan with safety limits
-    safePlanProof match config
+    safePlanProof patternMatch {
+      maxSteps := config.maxSteps,
+      timeout := config.timeout,
+      simpSet := config.simpSet,
+      trace := true,
+      strict := config.strict,
+      fallback := config.fallback,
+      enableTelemetry := config.enableTelemetry
+    }
 
     -- Record telemetry if enabled
     if config.enableTelemetry then
@@ -151,7 +174,7 @@ def uproveExplainTactic (config : UproveConfig) : Lean.TacticM Unit := do
         "4.12.0"
         "0.1.0"
         endTime
-      unsafeIO (recordTelemetry telemetryData)
+      recordTelemetry telemetryData
 
   | none => do
     Lean.logInfo "❌ No matching universal property pattern found"
@@ -166,17 +189,17 @@ def uproveExplainTactic (config : UproveConfig) : Lean.TacticM Unit := do
     uproveTactic config
 
 -- Generate human-readable proof plan
-def generateProofPlan (match : PatternMatch) (config : UproveConfig) : String :=
+def generateProofPlan (patternMatch : PatternMatch) (config : UproveConfig) : String :=
   let steps := [
-    s!"1. Construct canonical {match.up.name}",
+    s!"1. Construct canonical {patternMatch.up.name}",
     "2. Apply uniqueness property",
     s!"3. Delegate residual goals to {config.fallback}"
   ]
   steps.foldl (· + "\n" + ·) ""
 
 -- Generate structured proof plan (JSON-like format)
-def generateStructuredPlan (match : PatternMatch) (config : UproveConfig) : String :=
-  s!"{{\"pattern\": \"{match.up.name}\", \"confidence\": {match.confidence}, \"steps\": [\"construct\", \"uniqueness\", \"delegate\"], \"fallback\": {config.fallback}}}"
+def generateStructuredPlan (patternMatch : PatternMatch) (config : UproveConfig) : String :=
+  s!"{{\"pattern\": \"{patternMatch.up.name}\", \"confidence\": {patternMatch.confidence}, \"steps\": [\"construct\", \"uniqueness\", \"delegate\"], \"fallback\": {config.fallback}}}"
 
 -- Helper functions for telemetry
 def generateGoalHash (goal : Lean.Expr) : String :=
@@ -188,5 +211,17 @@ def recordTelemetry (data : TelemetryData) : IO Unit := do
   if System.getEnv "UPROVE_TELEMETRY" == some "1" then
     IO.println s!"[TELEMETRY] {data.tacticName}: {data.executionTime}ms, success: {data.success}, goal: {data.goalHash}"
   pure ()
+
+-- Telemetry data structure
+structure TelemetryData where
+  tacticName : String
+  executionTime : Nat
+  stepCount : Nat
+  success : Bool
+  goalHash : String
+  leanVersion : String
+  mathlibVersion : String
+  timestamp : Nat
+  deriving Inhabited, Repr
 
 end Uprove

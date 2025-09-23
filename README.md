@@ -75,12 +75,43 @@ graph TD
 
 ## Quick Start
 
-### Installation
+Get up and running with lean-uprove in under 10 minutes!
 
-Add to your `lakefile.lean`:
+### One-Command Installation
 
-```lean
-require uprove from git "https://github.com/fraware/lean-uprove.git"
+**Docker (Recommended):**
+```bash
+docker run --rm ghcr.io/fraware/lean-uprove:latest --help
+```
+
+**Installation Script:**
+```bash
+# Linux/macOS
+curl -fsSL https://raw.githubusercontent.com/fraware/lean-uprove/main/scripts/install.sh | bash
+
+# Windows
+curl -fsSL https://raw.githubusercontent.com/fraware/lean-uprove/main/scripts/install.bat -o install.bat
+install.bat
+```
+
+**From Source:**
+```bash
+git clone https://github.com/fraware/lean-uprove.git
+cd lean-uprove
+make dev && make run
+```
+
+### Quick Test
+
+```bash
+# Test installation
+lean-uprove validate
+
+# Run examples
+lean-uprove examples
+
+# Run benchmarks
+lean-uprove benchmark
 ```
 
 ### Basic Usage
@@ -96,6 +127,14 @@ theorem explained_proof : IsLimit (limitCone (pair X Y)) := by uprove?
 
 -- With custom configuration
 theorem configured_proof : IsLimit (limitCone (pair X Y)) := by uprove [maxSteps := 32]
+```
+
+### Add to Your Project
+
+Add to your `lakefile.lean`:
+
+```lean
+require uprove from git "https://github.com/fraware/lean-uprove.git"
 ```
 
 ## Documentation
@@ -225,7 +264,39 @@ Benchmark Suite: Universal Properties
 
 ## Installation
 
-### Option 1: As Dependency (Recommended)
+### Option 1: Docker (Recommended)
+
+```bash
+# Run directly
+docker run --rm ghcr.io/fraware/lean-uprove:latest --help
+
+# Pull and run locally
+docker pull ghcr.io/fraware/lean-uprove:latest
+docker run --rm ghcr.io/fraware/lean-uprove:latest test
+```
+
+### Option 2: Installation Script
+
+**Linux/macOS:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/fraware/lean-uprove/main/scripts/install.sh | bash
+```
+
+**Windows:**
+```powershell
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/fraware/lean-uprove/main/scripts/install.bat" -OutFile "install.bat"
+.\install.bat
+```
+
+### Option 3: From Source
+
+```bash
+git clone https://github.com/fraware/lean-uprove.git
+cd lean-uprove
+make dev && make run
+```
+
+### Option 4: As Dependency
 
 Add to your `lakefile.lean`:
 
@@ -233,12 +304,19 @@ Add to your `lakefile.lean`:
 require uprove from git "https://github.com/fraware/lean-uprove.git"
 ```
 
-### Option 2: From Source
+### Verification
+
+After installation, verify everything works:
 
 ```bash
-git clone https://github.com/fraware/lean-uprove.git
-cd lean-uprove
-lake build
+# Test installation
+lean-uprove validate
+
+# Run examples
+lean-uprove examples
+
+# Run benchmarks
+lean-uprove benchmark
 ```
 
 ## Development

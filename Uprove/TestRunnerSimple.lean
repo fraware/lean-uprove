@@ -14,14 +14,14 @@ def main : IO Unit := do
   IO.println "\n📋 Testing Core Functionality"
   IO.println "============================="
 
-  let config := testConfig
+  let config := defaultConfig
   IO.println s!"✅ Configuration loaded: {config}"
 
   -- Test 2: Pattern registration
   IO.println "\n📋 Testing Pattern Registration"
   IO.println "==============================="
 
-  let patterns ← unsafeIO getRegisteredPatterns
+  let patterns ← getRegisteredPatterns
   IO.println s!"✅ Registered patterns: {patterns.length}"
   for pattern in patterns do
     IO.println s!"  - {pattern.name}"
@@ -30,10 +30,10 @@ def main : IO Unit := do
   IO.println "\n📋 Testing Isomorphism Registration"
   IO.println "==================================="
 
-  let isos ← unsafeIO getRegisteredIsomorphisms
+  let isos ← getRegisteredIsomorphisms
   IO.println s!"✅ Registered isomorphisms: {isos.length}"
-  for iso in isos do
-    IO.println s!"  - {iso.name}"
+  for (from, to) in isos do
+    IO.println s!"  - iso registered"
 
   -- Test 4: Pattern matching
   IO.println "\n📋 Testing Pattern Matching"

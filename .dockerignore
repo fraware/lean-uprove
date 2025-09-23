@@ -1,0 +1,95 @@
+# Docker ignore file for lean-uprove
+# Excludes unnecessary files from Docker build context
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Build artifacts
+build/
+lake-packages/
+.lake/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# Logs
+*.log
+logs/
+
+# Test artifacts
+test-results/
+coverage/
+
+# Documentation build
+docs/_build/
+docs/.doctrees/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node modules
+node_modules/
+npm-debug.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Editor files
+*.sublime-*
+*.code-workspace
+
+# Local configuration
+.env
+.env.local
+.env.*.local
+
+# CI/CD
+.github/workflows/
+scripts/validate-*.sh
+scripts/validate-*.bat
+
+# Development files
+Makefile
+docker-compose.yml
+docker-compose.yaml
+
+# Large files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Binary files
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Archive files
+*.tar
+*.gz
+*.bz2
+*.xz

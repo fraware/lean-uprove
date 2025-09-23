@@ -5,13 +5,12 @@ package «lean-uprove» where
   moreServerOptions := #[⟨`autoImplicit, false⟩]
   moreLeanArgs := #["-DautoImplicit=false"]
 
--- Temporarily disable mathlib to verify core correctness
--- require mathlib from git
---   "https://github.com/leanprover-community/mathlib4.git" @ "master"
+require mathlib from git
+  "https://github.com/leanprover-community/mathlib4.git" @ "master"
 
 @[default_target]
 lean_lib «Uprove» where
-  roots := #[`Uprove.Core]
+  roots := #[`Uprove]
 
 -- Test target
 lean_exe test where
