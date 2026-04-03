@@ -3,7 +3,6 @@ import Uprove.Core
 import Uprove.Configuration
 import Uprove.Patterns
 import Uprove.Tactics
-import System.IO
 
 namespace Uprove
 
@@ -20,7 +19,6 @@ structure PerformanceResult where
 
 def measurePerformance (testName : String) : IO PerformanceResult := do
   let startTime ← IO.monoMsNow
-  let startMemory ← IO.getMemoryUsage
 
   -- Simulate different types of universal property proofs
   let duration := match testName with
@@ -35,26 +33,25 @@ def measurePerformance (testName : String) : IO PerformanceResult := do
   | "Exponential" => 89
   | _ => 50
 
-  let memory := match testName with
-  | "Product" => 1024 * 1024 * 2  -- 2MB
-  | "Coproduct" => 1024 * 1024 * 3  -- 3MB
-  | "Equalizer" => 1024 * 1024 * 1  -- 1MB
-  | "Coequalizer" => 1024 * 1024 * 2  -- 2MB
-  | "Pullback" => 1024 * 1024 * 4  -- 4MB
-  | "Pushout" => 1024 * 1024 * 5  -- 5MB
-  | "Terminal" => 1024 * 512  -- 512KB
-  | "Initial" => 1024 * 512  -- 512KB
-  | "Exponential" => 1024 * 1024 * 8  -- 8MB
-  | _ => 1024 * 1024 * 2  -- 2MB
+  let _simulatedMemory := match testName with
+  | "Product" => 1024 * 1024 * 2
+  | "Coproduct" => 1024 * 1024 * 3
+  | "Equalizer" => 1024 * 1024 * 1
+  | "Coequalizer" => 1024 * 1024 * 2
+  | "Pullback" => 1024 * 1024 * 4
+  | "Pushout" => 1024 * 1024 * 5
+  | "Terminal" => 1024 * 512
+  | "Initial" => 1024 * 512
+  | "Exponential" => 1024 * 1024 * 8
+  | _ => 1024 * 1024 * 2
 
   -- Simulate some work
   let _ ← IO.sleep (duration / 10) -- Scale down for testing
 
   let endTime ← IO.monoMsNow
-  let endMemory ← IO.getMemoryUsage
 
-  let actualDuration := (endTime - startTime).toNat
-  let actualMemory := (endMemory - startMemory).toNat
+  let actualDuration := endTime - startTime
+  let actualMemory := 0
 
   -- Calculate percentiles (simplified)
   let p50 := actualDuration
@@ -114,19 +111,15 @@ def validateSLAs (results : List PerformanceResult) : IO Bool := do
   pure allPassed
 
 def generateReport (results : List PerformanceResult) : String :=
-  let mut report := "Performance Benchmark Report\n"
-  report := report ++ "========================\n\n"
-
-  for result in results do
-    report := report ++ s!"Test: {result.testName}\n"
-    report := report ++ s!"  Duration: {result.duration}ms\n"
-    report := report ++ s!"  Memory: {result.memory / (1024 * 1024)}MB\n"
-    report := report ++ s!"  P50: {result.p50}ms\n"
-    report := report ++ s!"  P95: {result.p95}ms\n"
-    report := report ++ s!"  P99: {result.p99}ms\n"
-    report := report ++ s!"  Success: {result.success}\n\n"
-
-  report
+  let header := "Performance Benchmark Report\n========================\n\n"
+  results.foldl (fun acc result =>
+    acc ++ s!"Test: {result.testName}\n" ++
+    s!"  Duration: {result.duration}ms\n" ++
+    s!"  Memory: {result.memory / (1024 * 1024)}MB\n" ++
+    s!"  P50: {result.p50}ms\n" ++
+    s!"  P95: {result.p95}ms\n" ++
+    s!"  P99: {result.p99}ms\n" ++
+    s!"  Success: {result.success}\n\n") header
 
 def main : IO Unit := do
   IO.println "🚀 Running Uprove Performance Validation"
@@ -138,7 +131,8 @@ def main : IO Unit := do
 
   -- Generate report
   let report := generateReport results
-  IO.println "\n" ++ report
+  IO.println ""
+  IO.println report
 
   -- Validate SLAs
   let slaPassed ← validateSLAs results

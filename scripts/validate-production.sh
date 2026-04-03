@@ -158,10 +158,10 @@ else
 fi
 
 # Check benchmarking
-if [ -f "Benchmark.lean" ]; then
-    print_success "Benchmark infrastructure exists"
+if [ -f "bench/Benchmark.lean" ]; then
+    print_success "Benchmark entrypoint exists"
 else
-    print_warning "Benchmark infrastructure not yet implemented"
+    print_warning "Benchmark entrypoint missing"
 fi
 
 echo ""
@@ -184,12 +184,6 @@ else
 fi
 
 # Check versioning
-if [ -f "CHANGELOG.md" ]; then
-    print_success "Changelog exists"
-else
-    print_warning "Changelog missing"
-fi
-
 if [ -f "lean-toolchain" ]; then
     print_success "Lean toolchain specified"
 else

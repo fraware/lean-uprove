@@ -1,94 +1,67 @@
-# Troubleshooting Guide
+# Troubleshooting
 
-Common issues and solutions when using `uprove`.
+Common issues when using **`uprove`** with **lean-uprove** on Lean 4.12 and the pinned Mathlib.
 
 ## "No matching universal property pattern found"
 
-**Cause**: The goal doesn't match any registered patterns.
+**Cause:** The goal does not match any registered pattern, or defaults were never registered.
 
-**Solutions**:
-1. Check that your goal is a universal property (IsLimit, IsColimit, etc.)
-2. Register a custom pattern with `@[uprove]`
-3. Use `uprove?` to see what patterns are available
-4. Try with `strict := false` to fall back to other tactics
+**Try:**
 
-## "Tactic timeout"
+1. Compare your goal to the shapes handled in this package (see the patterns and registration in the source tree).
+2. Use **`import UproveRegisterInit`** with **`import Uprove`** (or `import Uprove.Tactics`) so defaults are registered.
+3. Register your own lemma with **`@[uproveLemma]`** (avoid `@[uprove]`, which can clash with the tactic name).
+4. Use `uprove?` to see what the tactic considered.
+5. With **`strict := true`**, missing matches fail instead of using fallbacks. While exploring, keep the default non-strict behavior.
 
-**Cause**: The proof is taking too long.
+## "Unknown tactic" / `uprove` not found
 
-**Solutions**:
-1. Increase `timeout` in configuration
-2. Increase `maxSteps` if the proof needs more steps
-3. Use `uprove?` to see what's happening
-4. Break down complex proofs into smaller parts
+**Cause:** The tactics module is not imported.
 
-## "Memory limit exceeded"
+**Try:** `import Uprove` or `import Uprove.Tactics`, plus `UproveRegisterInit` for registration.
 
-**Cause**: The proof is using too much memory.
+## Pattern registration not visible
 
-**Solutions**:
-1. Reduce `maxSteps` to limit search depth
-2. Use more specific patterns
-3. Break down complex proofs
-4. Check for infinite loops in your definitions
+**Cause:** `UproveRegisterInit` was not loaded.
 
-## "Proof is not deterministic"
+**Try:** Add `import UproveRegisterInit` at the top of your file.
 
-**Cause**: The proof depends on the order of hypotheses.
+## Tactic timeout
 
-**Solutions**:
-1. Use `uprove?` to see the proof plan
-2. Reorder hypotheses consistently
-3. Use more specific patterns
-4. Report as a bug if it's a core issue
+**Cause:** Work exceeded the time budget (milliseconds).
 
-## "Fallback tactics failed"
+**Try:** Raise `timeout` and/or `maxSteps` in the configuration you pass to `uprove [ … ]`.
 
-**Cause**: The configured fallback tactics couldn't solve the goal.
+## Strict mode
 
-**Solutions**:
-1. Check that your goal is provable
-2. Try different fallback tactics
-3. Use `uprove?` to see what uprove tried
-4. Manually prove the goal to see what's needed
+**Cause:** No pattern match and strict mode turns off silent fallback.
 
-## Performance Issues
+**Try:** Use non-strict mode while developing, or finish the proof manually.
 
-**Symptoms**: Slow proof times, high memory usage.
+## Fallback tactics failed
 
-**Solutions**:
-1. Use `trace := true` to see what's happening
-2. Reduce `maxSteps` for faster but less thorough proofs
-3. Use more specific patterns
-4. Profile your proofs with the benchmark suite
+**Cause:** Fallback tactics did not close residual goals.
 
-## Pattern Registration Issues
+**Try:** Inspect goals after `uprove?`, adjust the `fallback` list in options, or complete the proof by hand.
 
-**Cause**: Custom patterns not being recognized.
+## Performance
 
-**Solutions**:
-1. Check that the pattern is correctly defined
-2. Ensure the pattern is registered with `@[uprove]`
-3. Check that the pattern matches your goal
-4. Use `uprove?` to see registered patterns
+**Try:** Enable `trace` in options, lower `maxSteps`, or run the benchmark executable locally (see the root README).
 
-## Configuration Issues
+## Examples vs. your project
 
-**Cause**: Configuration not being applied.
+If this repository’s CI is green but your project fails, build the examples the same way CI does:
 
-**Solutions**:
-1. Check syntax: `uprove [maxSteps := 32]`
-2. Ensure configuration is valid
-3. Check that the option exists
-4. Use `uprove?` to see current configuration
+```bash
+lake build UproveExamples
+```
 
-## Getting Help
+## Windows: linker or `lake exe` failures
 
-1. Check the [Cookbook](Cookbook.md) for examples
-2. Use `uprove?` to understand what's happening
-3. Enable tracing with `trace := true`
-4. Report issues on GitHub with:
-   - Minimal reproducible example
-   - Output of `uprove?`
-   - Configuration used
-   - Expected vs actual behavior
+Some executables link a large dependency graph and can fail on Windows. Prefer `lake build` and `lake build UproveExamples` to validate the library; report issues with your Lean and Lake versions.
+
+## Getting help
+
+1. [Cookbook](Cookbook.md) for idioms (confirm names against your Mathlib version).
+2. `examples/BasicExamples.lean` for Mathlib 4.12 naming (`limit.cone`, `colimit.cocone`, `HasBinaryProduct`, …).
+3. GitHub Issues with a small repro, imports, and `uprove?` output when possible.

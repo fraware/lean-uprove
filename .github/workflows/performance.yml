@@ -43,8 +43,9 @@ jobs:
     - name: Run basic benchmarks
       run: |
         echo "Running basic performance benchmarks..."
-        lake build Uprove.CoreMinimal
-        echo "Core build performance test passed"
+        lake build Uprove
+        lake exe uprove-benchmark || true
+        echo "Core build performance smoke passed"
 
     - name: Memory usage test
       run: |

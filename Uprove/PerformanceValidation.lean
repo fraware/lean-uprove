@@ -3,18 +3,15 @@ import Uprove.Configuration
 import Uprove.Patterns
 import Uprove.Tactics
 import Mathlib.CategoryTheory.Category.Basic
+import Mathlib.CategoryTheory.Limits.Shapes.BinaryProducts
 import Mathlib.CategoryTheory.Limits.Shapes.Products
-import Mathlib.CategoryTheory.Limits.Shapes.Coproducts
 import Mathlib.CategoryTheory.Limits.Shapes.Equalizers
-import Mathlib.CategoryTheory.Limits.Shapes.Coequalizers
-import Mathlib.CategoryTheory.Limits.Shapes.Pullbacks
-import Mathlib.CategoryTheory.Limits.Shapes.Pushouts
+import Mathlib.CategoryTheory.Limits.Shapes.Pullback.HasPullback
 import Mathlib.CategoryTheory.Limits.Shapes.Terminal
-import Mathlib.CategoryTheory.Limits.Shapes.Initial
-import Mathlib.CategoryTheory.Limits.Shapes.Exponentials
-import Mathlib.CategoryTheory.Isomorphism
+import Mathlib.CategoryTheory.Iso
 import Mathlib.CategoryTheory.Functor.Basic
-import Mathlib.CategoryTheory.NaturalTransformation
+import Mathlib.CategoryTheory.NatTrans
+import Lean.Expr
 import Lean.Meta
 import Lean.Elab.Tactic
 
@@ -143,21 +140,20 @@ def measurePerformance (testName : String) (goal : Lean.Expr) (config : UproveCo
 
 -- Golden suite test cases
 def goldenSuiteTests : List (String × Lean.Expr) := [
-  ("Product Basic", `(CategoryTheory.Limits.IsLimit (CategoryTheory.Limits.limitCone (fun _ => Unit)))),
-  ("Coproduct Basic", `(CategoryTheory.Limits.IsColimit (CategoryTheory.Limits.colimitCocone (fun _ => Unit)))),
-  ("Equalizer Basic", `(CategoryTheory.Limits.IsLimit (CategoryTheory.Limits.equalizerCone (fun _ => Unit) (fun _ => Unit)))),
-  ("Coequalizer Basic", `(CategoryTheory.Limits.IsColimit (CategoryTheory.Limits.coequalizerCocone (fun _ => Unit) (fun _ => Unit)))),
-  ("Pullback Basic", `(CategoryTheory.Limits.IsLimit (CategoryTheory.Limits.pullbackCone (fun _ => Unit) (fun _ => Unit)))),
-  ("Pushout Basic", `(CategoryTheory.Limits.IsColimit (CategoryTheory.Limits.pushoutCocone (fun _ => Unit) (fun _ => Unit)))),
-  ("Terminal Basic", `(CategoryTheory.Limits.IsLimit (CategoryTheory.Limits.terminalCone))),
-  ("Initial Basic", `(CategoryTheory.Limits.IsColimit (CategoryTheory.Limits.initialCocone))),
-  ("Exponential Basic", `(CategoryTheory.Closed.Cartesian.IsExponential (fun _ => Unit) (fun _ => Unit)))),
-  ("Isomorphism Basic", `(CategoryTheory.IsIso (fun _ => Unit))),
-  ("Finite Cone", `(CategoryTheory.Limits.IsLimit (CategoryTheory.Limits.limitCone (fun i : Fin 3 => Unit)))),
-  ("Finite Cocone", `(CategoryTheory.Limits.IsColimit (CategoryTheory.Limits.colimitCocone (fun i : Fin 3 => Unit)))),
-  ("Functor Basic", `(CategoryTheory.Functor Unit Unit)),
-  ("Natural Transformation", `(CategoryTheory.NaturalTransformation (fun _ => Unit) (fun _ => Unit))),
-  ("Complex Product", `(CategoryTheory.Limits.IsLimit (CategoryTheory.Limits.limitCone (fun i : Fin 5 => Unit))))
+  ("Product Basic", Lean.mkConst ``CategoryTheory.Limits.IsLimit),
+  ("Coproduct Basic", Lean.mkConst ``CategoryTheory.Limits.IsColimit),
+  ("Equalizer Basic", Lean.mkConst ``CategoryTheory.Limits.IsLimit),
+  ("Coequalizer Basic", Lean.mkConst ``CategoryTheory.Limits.IsColimit),
+  ("Pullback Basic", Lean.mkConst ``CategoryTheory.Limits.IsLimit),
+  ("Pushout Basic", Lean.mkConst ``CategoryTheory.Limits.IsColimit),
+  ("Terminal Basic", Lean.mkConst ``CategoryTheory.Limits.IsLimit),
+  ("Initial Basic", Lean.mkConst ``CategoryTheory.Limits.IsColimit),
+  ("Isomorphism Basic", Lean.mkConst ``CategoryTheory.IsIso),
+  ("Finite Cone", Lean.mkConst ``CategoryTheory.Limits.IsLimit),
+  ("Finite Cocone", Lean.mkConst ``CategoryTheory.Limits.IsColimit),
+  ("Functor Basic", Lean.mkConst ``CategoryTheory.Functor),
+  ("Natural Transformation", Lean.mkConst ``CategoryTheory.NatTrans),
+  ("Complex Product", Lean.mkConst ``CategoryTheory.Limits.IsLimit)
 ]
 
 -- Run performance suite

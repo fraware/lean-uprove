@@ -1,4 +1,5 @@
 import Lean
+import Lean.Expr
 import Uprove.Core
 import Uprove.Configuration
 import Uprove.Patterns
@@ -26,9 +27,9 @@ def main : IO Unit := do
   -- Test 2: Pattern Matching
   IO.println "\n📋 Test 2: Pattern Matching"
   let testGoals := [
-    ("Product", `(CategoryTheory.Limits.IsLimit (CategoryTheory.Limits.limitCone (fun _ => Unit)))),
-    ("Coproduct", `(CategoryTheory.Limits.IsColimit (CategoryTheory.Limits.colimitCocone (fun _ => Unit)))),
-    ("Equalizer", `(CategoryTheory.Limits.IsLimit (CategoryTheory.Limits.equalizerCone (fun _ => Unit) (fun _ => Unit))))
+    ("Product", Lean.mkConst ``CategoryTheory.Limits.IsLimit),
+    ("Coproduct", Lean.mkConst ``CategoryTheory.Limits.IsColimit),
+    ("Equalizer", Lean.mkConst ``CategoryTheory.Limits.IsLimit)
   ]
 
   let mut patternMatches := 0

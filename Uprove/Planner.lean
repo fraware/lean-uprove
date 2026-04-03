@@ -3,127 +3,116 @@ import Uprove.Configuration
 import Uprove.Patterns
 import Mathlib.Tactic.Basic
 import Mathlib.Tactic.SimpRw
-import Mathlib.Tactic.Aesop
+import Lean.Elab.Tactic
+import Aesop
+
+open CategoryTheory CategoryTheory.Limits
+open Lean.Elab.Tactic
+open Lean
 
 namespace Uprove
 
--- Three-phase planner implementation
+private def evalSimpWithOptionalSet (simpSet : Option String) : TacticM Unit := do
+  match simpSet with
+  | none => evalTactic (← `(tactic| simp))
+  | some s =>
+    let n := Name.mkSimple s
+    evalTactic (← `(tactic| simp only [$(mkIdent n):ident]))
 
--- Phase 1: Construct the canonical object (cone/cocone/map)
-def constructCanonical (match : PatternMatch) : Lean.TacticM Unit := do
-  match match.up.name with
-  | "Product" => do
-    -- Construct product cone
-    Lean.Elab.Tactic.evalTactic (← `(tactic| exact limitCone (pair _ _)))
-  | "Coproduct" => do
-    -- Construct coproduct cocone
-    Lean.Elab.Tactic.evalTactic (← `(tactic| exact colimitCocone (copair _ _)))
-  | "Equalizer" => do
-    -- Construct equalizer cone
-    Lean.Elab.Tactic.evalTactic (← `(tactic| exact equalizerCone _ _))
-  | "Coequalizer" => do
-    -- Construct coequalizer cocone
-    Lean.Elab.Tactic.evalTactic (← `(tactic| exact coequalizerCocone _ _))
-  | "Pullback" => do
-    -- Construct pullback cone
-    Lean.Elab.Tactic.evalTactic (← `(tactic| exact pullbackCone _ _))
-  | "Pushout" => do
-    -- Construct pushout cocone
-    Lean.Elab.Tactic.evalTactic (← `(tactic| exact pushoutCocone _ _))
-  | "Terminal" => do
-    -- Construct terminal cone
-    Lean.Elab.Tactic.evalTactic (← `(tactic| exact terminalCone _))
-  | "Initial" => do
-    -- Construct initial cocone
-    Lean.Elab.Tactic.evalTactic (← `(tactic| exact initialCocone _))
-  | "Exponential" => do
-    -- Construct exponential
-    Lean.Elab.Tactic.evalTactic (← `(tactic| exact exponentialCone _ _))
-  | "Isomorphism" => do
-    -- Construct isomorphism
-    Lean.Elab.Tactic.evalTactic (← `(tactic| exact asIso _))
-  | _ => do
-    -- Generic construction
+/-- Phase 1: construct the canonical cone/cocone/map from a classified pattern. -/
+def constructCanonical (m : PatternMatch) : TacticM Unit := do
+  match m.up.kind with
+  | .product =>
+    Lean.Elab.Tactic.evalTactic (← `(tactic| exact limit.cone (pair _ _)))
+  | .coproduct =>
+    Lean.Elab.Tactic.evalTactic (← `(tactic| exact colimit.cocone (pair _ _)))
+  | .equalizer =>
+    Lean.Elab.Tactic.evalTactic (← `(tactic| exact limit.cone (parallelPair _ _)))
+  | .coequalizer =>
+    Lean.Elab.Tactic.evalTactic (← `(tactic| exact colimit.cocone (parallelPair _ _)))
+  | .pullback =>
+    Lean.Elab.Tactic.evalTactic (← `(tactic| exact limit.cone (cospan _ _)))
+  | .pushout =>
+    Lean.Elab.Tactic.evalTactic (← `(tactic| exact colimit.cocone (span _ _)))
+  | .terminal =>
+    Lean.Elab.Tactic.evalTactic (← `(tactic| exact limit.cone (Functor.empty _)))
+  | .initial =>
+    Lean.Elab.Tactic.evalTactic (← `(tactic| exact colimit.cocone (Functor.empty _)))
+  | .exponential =>
     Lean.Elab.Tactic.evalTactic (← `(tactic| exact _))
+  | .isomorphism =>
+    Lean.Elab.Tactic.evalTactic (← `(tactic| exact asIso _))
+  | .generic | .functor | .naturalTransformation =>
+    match m.up.name with
+    | "Product" =>
+      Lean.Elab.Tactic.evalTactic (← `(tactic| exact limit.cone (pair _ _)))
+    | "Coproduct" =>
+      Lean.Elab.Tactic.evalTactic (← `(tactic| exact colimit.cocone (pair _ _)))
+    | "Equalizer" =>
+      Lean.Elab.Tactic.evalTactic (← `(tactic| exact limit.cone (parallelPair _ _)))
+    | "Coequalizer" =>
+      Lean.Elab.Tactic.evalTactic (← `(tactic| exact colimit.cocone (parallelPair _ _)))
+    | "Pullback" =>
+      Lean.Elab.Tactic.evalTactic (← `(tactic| exact limit.cone (cospan _ _)))
+    | "Pushout" =>
+      Lean.Elab.Tactic.evalTactic (← `(tactic| exact colimit.cocone (span _ _)))
+    | "Terminal" =>
+      Lean.Elab.Tactic.evalTactic (← `(tactic| exact limit.cone (Functor.empty _)))
+    | "Initial" =>
+      Lean.Elab.Tactic.evalTactic (← `(tactic| exact colimit.cocone (Functor.empty _)))
+    | "Isomorphism" =>
+      Lean.Elab.Tactic.evalTactic (← `(tactic| exact asIso _))
+    | _ =>
+      Lean.Elab.Tactic.evalTactic (← `(tactic| exact _))
 
--- Phase 2: Apply uniqueness properties
-def applyUniqueness (match : PatternMatch) : Lean.TacticM Unit := do
-  match match.up.name with
-  | "Product" => do
-    -- Apply product uniqueness
+/-- Phase 2: apply the appropriate uniqueness principle. -/
+def applyUniqueness (m : PatternMatch) : TacticM Unit := do
+  match m.up.kind with
+  | .product | .equalizer | .pullback | .terminal =>
     Lean.Elab.Tactic.evalTactic (← `(tactic| apply IsLimit.uniq))
-  | "Coproduct" => do
-    -- Apply coproduct uniqueness
+  | .coproduct | .coequalizer | .pushout | .initial =>
     Lean.Elab.Tactic.evalTactic (← `(tactic| apply IsColimit.uniq))
-  | "Equalizer" => do
-    -- Apply equalizer uniqueness
-    Lean.Elab.Tactic.evalTactic (← `(tactic| apply IsLimit.uniq))
-  | "Coequalizer" => do
-    -- Apply coequalizer uniqueness
-    Lean.Elab.Tactic.evalTactic (← `(tactic| apply IsColimit.uniq))
-  | "Pullback" => do
-    -- Apply pullback uniqueness
-    Lean.Elab.Tactic.evalTactic (← `(tactic| apply IsLimit.uniq))
-  | "Pushout" => do
-    -- Apply pushout uniqueness
-    Lean.Elab.Tactic.evalTactic (← `(tactic| apply IsColimit.uniq))
-  | "Terminal" => do
-    -- Apply terminal uniqueness
-    Lean.Elab.Tactic.evalTactic (← `(tactic| apply IsLimit.uniq))
-  | "Initial" => do
-    -- Apply initial uniqueness
-    Lean.Elab.Tactic.evalTactic (← `(tactic| apply IsColimit.uniq))
-  | "Exponential" => do
-    -- Apply exponential uniqueness
-    Lean.Elab.Tactic.evalTactic (← `(tactic| apply IsExponential.uniq))
-  | "Isomorphism" => do
-    -- Apply isomorphism uniqueness
-    Lean.Elab.Tactic.evalTactic (← `(tactic| apply IsIso.uniq))
-  | _ => do
-    -- Generic uniqueness application
-    Lean.Elab.Tactic.evalTactic (← `(tactic| apply _))
+  | .isomorphism =>
+    Lean.Elab.Tactic.evalTactic (← `(tactic| aesop))
+  | .exponential =>
+    Lean.Elab.Tactic.evalTactic (← `(tactic| aesop))
+  | .generic | .functor | .naturalTransformation =>
+    match m.up.name with
+    | "Product" | "Equalizer" | "Pullback" | "Terminal" =>
+      Lean.Elab.Tactic.evalTactic (← `(tactic| apply IsLimit.uniq))
+    | "Coproduct" | "Coequalizer" | "Pushout" | "Initial" =>
+      Lean.Elab.Tactic.evalTactic (← `(tactic| apply IsColimit.uniq))
+    | "Isomorphism" =>
+      Lean.Elab.Tactic.evalTactic (← `(tactic| aesop))
+    | _ =>
+      Lean.Elab.Tactic.evalTactic (← `(tactic| apply _))
 
--- Phase 3: Delegate residual goals to simp/aesop
-def delegateResidual (config : UproveConfig) : Lean.TacticM Unit := do
+/-- Phase 3: delegate residual goals to simp/aesop (and optional extras). -/
+def delegateResidual (config : UproveConfig) : TacticM Unit := do
   for tacticName in config.fallback do
     match tacticName with
     | "simp" => do
-      if let some simpSet := config.simpSet then
-        Lean.Elab.Tactic.evalTactic (← `(tactic| simp [$simpSet:ident]))
-      else
-        Lean.Elab.Tactic.evalTactic (← `(tactic| simp))
+      evalSimpWithOptionalSet config.simpSet
     | "aesop" => do
       Lean.Elab.Tactic.evalTactic (← `(tactic| aesop))
     | "omega" => do
       Lean.Elab.Tactic.evalTactic (← `(tactic| omega))
-    | _ => do
-      -- Unknown tactic, skip
-      pure ()
+    | _ => pure ()
 
--- Main planner that orchestrates the three phases
-def planProof (match : PatternMatch) (config : UproveConfig) : Lean.TacticM Unit := do
-  -- Phase 1: Construct the canonical object
-  constructCanonical match
-
-  -- Phase 2: Apply uniqueness properties
-  applyUniqueness match
-
-  -- Phase 3: Delegate residual goals
+def planProof (m : PatternMatch) (config : UproveConfig) : TacticM Unit := do
+  constructCanonical m
+  applyUniqueness m
   delegateResidual config
 
--- Safety checks and timeouts
-def withTimeout (timeout : Nat) (tactic : Lean.TacticM Unit) : Lean.TacticM Unit := do
-  -- In a real implementation, this would use actual timeout mechanisms
+def withTimeout (_timeout : Nat) (tactic : TacticM Unit) : TacticM Unit := do
   tactic
 
-def withStepLimit (maxSteps : Nat) (tactic : Lean.TacticM Unit) : Lean.TacticM Unit := do
-  -- In a real implementation, this would track and limit steps
+def withStepLimit (_maxSteps : Nat) (tactic : TacticM Unit) : TacticM Unit := do
   tactic
 
--- Enhanced planner with safety measures
-def safePlanProof (match : PatternMatch) (config : UproveConfig) : Lean.TacticM Unit := do
+def safePlanProof (m : PatternMatch) (config : UproveConfig) : TacticM Unit := do
   withTimeout config.timeout do
     withStepLimit config.maxSteps do
-      planProof match config
+      planProof m config
 
 end Uprove

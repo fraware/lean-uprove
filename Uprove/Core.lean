@@ -8,6 +8,13 @@ open Lean Elab Tactic
 
 namespace Uprove
 
+/-- Discriminator for planner routing (avoids stringly-typed `name` checks). -/
+inductive UniversalPropertyKind where
+  | generic
+  | product | coproduct | equalizer | coequalizer | pullback | pushout
+  | terminal | initial | exponential | isomorphism | functor | naturalTransformation
+  deriving Inhabited, Repr, BEq
+
 -- Core types for universal properties
 structure UniversalProperty where
   name : String
@@ -15,6 +22,7 @@ structure UniversalProperty where
   constructor : Lean.Expr
   uniqueness : Lean.Expr
   naturality : Option Lean.Expr := none
+  kind : UniversalPropertyKind := .generic
   deriving Inhabited, Repr
 
 structure PatternMatch where
@@ -72,82 +80,36 @@ def getRegisteredIsomorphisms : IO (List (Lean.Expr × Lean.Expr)) := do
   let reg ← globalRegistry.get
   pure reg.isomorphisms
 
--- Simple pattern matching functionality
+/-- True when `goal` and `pat` share the same constant head (after stripping apps). -/
+def sameHeadConst (goal pat : Lean.Expr) : Bool :=
+  goal.getAppFn.constName? == pat.getAppFn.constName?
+
+/-- Pairwise args when heads match `prop.pattern`; otherwise empty. -/
+def extractSubstitutions (goal : Lean.Expr) (prop : UniversalProperty) : List (Lean.Expr × Lean.Expr) :=
+  if !sameHeadConst goal prop.pattern then []
+  else
+    let gArgs := goal.getAppArgs.toList
+    let pArgs := prop.pattern.getAppArgs.toList
+    gArgs.zip pArgs
+
+def scoreMatch (goal : Lean.Expr) (prop : UniversalProperty) (subs : List (Lean.Expr × Lean.Expr)) : Float :=
+  let base := if sameHeadConst goal prop.constructor then 1.0 else 0.85
+  base + (subs.length.toFloat * 0.02)
+
+-- Pattern matching: first pattern whose head constant matches the goal head.
 def matchUniversalProperty (goal : Lean.Expr) (patterns : List UniversalProperty) : Option PatternMatch :=
-  -- Simple implementation that returns the first matching pattern
-  patterns.find? (fun prop =>
-    goal.getAppFn.constName? == prop.pattern.getAppFn.constName?)
+  patterns.find? (fun prop => sameHeadConst goal prop.pattern)
   |>.map (fun prop =>
-    { goal := goal, up := prop, substitutions := [], confidence := 1.0 })
+    let subs := extractSubstitutions goal prop
+    { goal := goal, up := prop, substitutions := subs
+      confidence := scoreMatch goal prop subs })
 
--- Extract variable substitutions from pattern matching
-def extractSubstitutions (goal : Lean.Expr) (pattern : Lean.Expr) : List (Lean.Expr × Lean.Expr) :=
-  -- Simple implementation
-  []
-
--- Calculate confidence score for pattern match
-def calculateConfidence (goal : Lean.Expr) (pattern : Lean.Expr) (substitutions : List (Lean.Expr × Lean.Expr)) : Float :=
-  -- Simple implementation
-  1.0
-
--- Normal form preprocessing with isomorphism rewriting
+/-- If `expr` is defeq to a registered iso left-hand side, return the right-hand side (first hit). -/
 def normalizeExpression (expr : Lean.Expr) (isos : List (Lean.Expr × Lean.Expr)) : Lean.Expr :=
-  -- Simple implementation
-  expr
+  isos.foldl (fun e (fromE, toE) =>
+    if e == fromE then toE else e) expr
 
--- Enhanced expression normalization
 def normalizeComposition (expr : Lean.Expr) : Lean.Expr :=
-  -- Simple implementation
   expr
-
--- Phase 1: Construct the canonical object
-def constructCanonical (patternMatch : PatternMatch) : TacticM Unit := do
-  -- Simple implementation
-  Lean.Elab.Tactic.evalTactic (← `(tactic| exact _))
-
--- Phase 2: Apply uniqueness properties
-def applyUniqueness (patternMatch : PatternMatch) : TacticM Unit := do
-  -- Simple implementation
-  Lean.Elab.Tactic.evalTactic (← `(tactic| apply _))
-
--- Phase 3: Delegate residual goals to fallback tactics
-def delegateResidual (config : UproveConfig) : TacticM Unit := do
-  -- Simple implementation
-  Lean.Elab.Tactic.evalTactic (← `(tactic| simp))
-
--- Main planner with error handling
-def planProof (patternMatch : PatternMatch) (config : UproveConfig) : TacticM Unit := do
-  try
-    -- Phase 1: Construct the canonical object
-    constructCanonical patternMatch
-    -- Phase 2: Apply uniqueness properties
-    applyUniqueness patternMatch
-    -- Phase 3: Delegate residual goals
-    delegateResidual config
-  catch e =>
-    if config.strict then
-      throw e
-    else
-      -- Fall back to configured tactics
-      delegateResidual config
-
--- Enhanced safety measures with timeouts and step limits
-def withTimeout (timeoutMs : Nat) (tactic : TacticM Unit) : TacticM Unit := do
-  -- Simple implementation
-  tactic
-
-def withStepLimit (maxSteps : Nat) (tactic : TacticM Unit) : TacticM Unit := do
-  -- Simple implementation
-  tactic
-
--- Combined timeout and step limiting with progress tracking
-def withSafetyLimits (timeout : Nat) (maxSteps : Nat) (tactic : TacticM Unit) : TacticM Unit := do
-  -- Simple implementation
-  tactic
-
--- Enhanced planner with safety measures
-def safePlanProof (patternMatch : PatternMatch) (config : UproveConfig) : TacticM Unit := do
-  withSafetyLimits config.timeout config.maxSteps do
-    planProof patternMatch config
 
 end Uprove

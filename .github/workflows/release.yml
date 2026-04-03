@@ -9,133 +9,86 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
+      packages: write
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Set up Lean 4
-      uses: leanprover/lean4@v4.12.0
-      
-    - name: Install dependencies
-      run: |
-        lake update
-        lake build
-        
-    - name: Run tests
-      run: |
-        lake test
-        lake exe test
-        lake exe uprove-test-simple
-        lake exe uprove-test-production
-        lake exe uprove-performance-validation
-        
-    - name: Build Docker image
-      uses: docker/setup-buildx-action@v3
-      
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ghcr.io/${{ github.repository }}
-        tags: |
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=raw,value=latest
-          
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        platforms: linux/amd64,linux/arm64
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        
-    - name: Create release
-      uses: softprops/action-gh-release@v1
-      with:
-        name: Release ${{ github.ref_name }}
-        body: |
-          ## lean-uprove ${{ github.ref_name }}
-          
-          ### What's New
-          - Enhanced universal property pattern matching
-          - Improved performance and reliability
-          - Better error handling and diagnostics
-          
-          ### Installation
-          
-          **Docker:**
-          ```bash
-          docker run --rm ghcr.io/${{ github.repository }}:${{ github.ref_name }} --help
-          ```
-          
-          **From Source:**
-          ```bash
-          git clone https://github.com/${{ github.repository }}.git
-          cd lean-uprove
-          git checkout ${{ github.ref_name }}
-          make dev && make run
-          ```
-          
-          **Installation Script:**
-          ```bash
-          curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/scripts/install.sh | bash
-          ```
-          
-          ### Usage
-          ```lean
-          import Uprove
-          
-          theorem my_proof : IsLimit (limitCone (pair X Y)) := by uprove
-          ```
-          
-          ### Performance
-          - P50 ≤ 150ms per call
-          - P95 ≤ 800ms per call
-          - ≤ 256MB memory usage
-          - ≥ 40% reduction in overall proof time
-          
-          ### Documentation
-          - [Quickstart Guide](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/docs/Quickstart.md)
-          - [API Reference](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/README.md#api-reference)
-          - [Examples](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/examples/BasicExamples.lean)
-          
-          ### Full Changelog
-          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md) for detailed changes.
-        draft: false
-        prerelease: false
-        generate_release_notes: true
-        files: |
-          README.md
-          LICENSE
-          examples/
-          docs/
-          scripts/
-        tag_name: ${{ github.ref_name }}
-        target_commitish: ${{ github.ref }}
-        
-    - name: Upload release artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: release-artifacts
-        path: |
-          README.md
-          LICENSE
-          examples/
-          docs/
-          scripts/
-          Makefile
-          Dockerfile
-        retention-days: 90
+      - uses: actions/checkout@v4
+
+      - uses: leanprover/lean4@v4.12.0
+
+      - name: Build and test
+        run: |
+          lake build
+          lake build UproveExamples
+          lake test
+          lake exe test
+          lake exe uprove-test-simple
+          lake exe uprove-test-production
+          lake exe uprove-performance-validation
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## lean-uprove ${{ github.ref_name }}
+
+            **Docker:** `docker run --rm ghcr.io/${{ github.repository }}:${{ github.ref_name }} --help`
+
+            **Docs:** [Quickstart](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/docs/Quickstart.md) · [README](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/README.md)
+
+            **Lean usage:** `import UproveRegisterInit` and `import Uprove`.
+
+            See generated release notes below for commits in this tag.
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            README.md
+            LICENSE
+            examples/
+            docs/
+            scripts/
+          tag_name: ${{ github.ref_name }}
+          target_commitish: ${{ github.sha }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            README.md
+            LICENSE
+            examples/
+            docs/
+            scripts/
+            Makefile
+            Dockerfile
+          retention-days: 90

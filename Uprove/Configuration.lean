@@ -38,13 +38,13 @@ def defaultConfig : UproveOptions := {}
 
 -- Preset configurations
 def fastConfig : UproveOptions :=
-  { UproveOptions.mk with maxSteps := 32, timeout := 1000, fallback := ["simp"] }
+  { maxSteps := 32, timeout := 1000, fallback := ["simp"] }
 
 def thoroughConfig : UproveOptions :=
-  { UproveOptions.mk with maxSteps := 128, timeout := 5000, fallback := ["simp", "aesop", "omega"] }
+  { maxSteps := 128, timeout := 5000, fallback := ["simp", "aesop", "omega"] }
 
 def debugConfig : UproveOptions :=
-  { UproveOptions.mk with trace := true, enableTelemetry := true }
+  { trace := true, enableTelemetry := true }
 
 -- Configuration from environment variables
 def configFromEnv : IO UproveOptions := do
@@ -58,10 +58,10 @@ def configFromEnv : IO UproveOptions := do
 
   let maxSteps := maxSteps?.bind (fun s => s.toNat?) |>.getD 64
   let timeout := timeout?.bind (fun s => s.toNat?) |>.getD 2000
-  let trace := trace?.map (fun s => s = "1" ∨ s = "true").getD false
-  let strict := strict?.map (fun s => s = "1" ∨ s = "true").getD false
-  let enableTelemetry := telemetry?.map (fun s => s = "1" ∨ s = "true").getD false
-  let fallback := fallback?.map (fun s => s.splitOn ",").getD ["simp", "aesop"]
+  let trace := match trace? with | some s => (s == "1" || s == "true") | none => false
+  let strict := match strict? with | some s => (s == "1" || s == "true") | none => false
+  let enableTelemetry := match telemetry? with | some s => (s == "1" || s == "true") | none => false
+  let fallback := match fallback? with | some s => s.splitOn "," | none => ["simp", "aesop"]
 
   let cfg : UproveOptions := {
     maxSteps := maxSteps,
