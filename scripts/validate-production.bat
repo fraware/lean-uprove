@@ -112,13 +112,6 @@ if exist "lake-manifest.json" (
     exit /b 1
 )
 
-REM Check versioning
-if exist "CHANGELOG.md" (
-    echo [SUCCESS] Changelog exists
-) else (
-    echo [WARNING] Changelog missing
-)
-
 if exist "lean-toolchain" (
     echo [SUCCESS] Lean toolchain specified
 ) else (

@@ -2,18 +2,14 @@ import Uprove.Core
 import Uprove.Patterns
 import Uprove.Tactics
 import Mathlib.CategoryTheory.Category.Basic
+import Mathlib.CategoryTheory.Limits.Shapes.BinaryProducts
 import Mathlib.CategoryTheory.Limits.Shapes.Products
-import Mathlib.CategoryTheory.Limits.Shapes.Coproducts
 import Mathlib.CategoryTheory.Limits.Shapes.Equalizers
-import Mathlib.CategoryTheory.Limits.Shapes.Coequalizers
-import Mathlib.CategoryTheory.Limits.Shapes.Pullbacks
-import Mathlib.CategoryTheory.Limits.Shapes.Pushouts
+import Mathlib.CategoryTheory.Limits.Shapes.Pullback.HasPullback
 import Mathlib.CategoryTheory.Limits.Shapes.Terminal
-import Mathlib.CategoryTheory.Limits.Shapes.Initial
-import Mathlib.CategoryTheory.Limits.Shapes.Exponentials
-import Mathlib.CategoryTheory.Isomorphism
+import Mathlib.CategoryTheory.Iso
 import Mathlib.CategoryTheory.Functor.Basic
-import Mathlib.CategoryTheory.NaturalTransformation
+import Mathlib.CategoryTheory.NatTrans
 import Lean.Meta
 import Lean.Elab.Tactic
 

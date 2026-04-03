@@ -1,113 +1,62 @@
-# lean-uprove Architecture
+# Architecture
 
-## System Overview
+High-level layout of the package. For what automation runs in practice, see [CI-CD.md](CI-CD.md).
 
-```mermaid
-graph TB
-    subgraph "User Interface"
-        A[Lean 4 Code] --> B[uprove Tactic]
-        B --> C[Configuration]
-    end
-    
-    subgraph "Core Engine"
-        D[Pattern Matcher] --> E[Proof Planner]
-        E --> F[Step Executor]
-        F --> G[Result Validator]
-    end
-    
-    subgraph "Pattern Library"
-        H[Universal Properties]
-        I[Canonical Isomorphisms]
-        J[Custom Patterns]
-    end
-    
-    subgraph "Fallback System"
-        K[Simp Tactics]
-        L[Aesop Tactics]
-        M[Custom Fallbacks]
-    end
-    
-    subgraph "Performance Layer"
-        N[Timeout Manager]
-        O[Memory Monitor]
-        P[Telemetry Collector]
-    end
-    
-    B --> D
-    D --> H
-    D --> I
-    D --> J
-    E --> F
-    F --> G
-    G -->|Success| Q[Proof Complete]
-    G -->|Failure| K
-    K --> L
-    L --> M
-    
-    C --> N
-    N --> O
-    O --> P
-    
-    style A fill:#e3f2fd
-    style Q fill:#c8e6c9
-    style D fill:#fff3e0
-    style E fill:#fff3e0
-    style F fill:#fff3e0
-```
+## Modules
 
-## Component Details
+| Area | Location | Role |
+|------|-----------|------|
+| Version | `Uprove/Version.lean` | Package version strings |
+| Core | `Uprove/Core.lean` | Universal-property types and matching hooks |
+| Patterns | `Uprove/Patterns.lean` | Declared patterns |
+| Planner | `Uprove/Planner.lean` | Proof plans and safe variants |
+| Tactics | `Uprove/Tactics.lean` | `uprove` / `uprove?` |
+| Config | `Uprove/Configuration.lean` | Options and presets |
+| Telemetry | `Uprove/Telemetry.lean` | Optional logging hooks |
+| Registration | `UproveRegisterInit.lean` (repo root) | Builtin attributes and default registration |
+| Examples | `examples/BasicExamples.lean` | Mathlib examples checked in CI |
 
-### Pattern Matcher
-- Analyzes the goal to identify universal property patterns
-- Matches against registered patterns and canonical isomorphisms
-- Determines the appropriate proof strategy
+`import Uprove` aggregates the main library. Consumers who need built-in registrations should also **`import UproveRegisterInit`**.
 
-### Proof Planner
-- Generates a step-by-step proof plan
-- Considers multiple strategies and fallbacks
-- Optimizes for performance and reliability
-
-### Step Executor
-- Executes individual proof steps
-- Handles timeouts and resource constraints
-- Provides detailed tracing and debugging information
-
-### Result Validator
-- Verifies the correctness of generated proofs
-- Ensures all constraints are satisfied
-- Handles edge cases and error conditions
-
-## Data Flow
+## Data flow (conceptual)
 
 ```mermaid
-sequenceDiagram
-    participant U as User
-    participant T as uprove Tactic
-    participant P as Pattern Matcher
-    participant L as Proof Planner
-    participant E as Step Executor
-    participant V as Result Validator
-    participant F as Fallback System
-    
-    U->>T: Goal + Configuration
-    T->>P: Analyze Goal
-    P->>L: Matched Patterns
-    L->>E: Proof Plan
-    E->>V: Executed Steps
-    V->>T: Success/Failure
-    
-    alt Success
-        T->>U: Proof Complete
-    else Failure
-        T->>F: Try Fallbacks
-        F->>T: Fallback Result
-    end
+flowchart LR
+  subgraph user [User]
+    G[Goal]
+  end
+  subgraph tactic [Tactic]
+    T[uprove / uprove?]
+  end
+  subgraph engine [Engine]
+    P[Registered patterns]
+    M[Match]
+    PL[Planner]
+    F[Fallbacks]
+  end
+  G --> T
+  T --> P
+  P --> M
+  M --> PL
+  PL --> F
 ```
 
-## Performance Characteristics
+## Matcher and planner
 
-- **Pattern Matching**: O(1) for registered patterns
-- **Proof Planning**: O(n) where n is the number of steps
-- **Step Execution**: Variable, typically O(log n) for most operations
-- **Memory Usage**: Bounded by configuration limits
-- **Timeout Handling**: Configurable per operation
+Behavior is routed by structured kinds where possible. The matcher covers a **limited** subset of what Mathlib can express; hard goals may still need manual proofs.
+
+## Performance and timeouts
+
+Timeout helpers exist, but wall-clock limits in the tactic path are not fully strict. Benchmarks and SLA checks live in performance-related modules, `bench/Benchmark.lean`, and optional executables.
+
+## Testing
+
+- `lake build` — main library.
+- `lake build UproveExamples` — example theorems.
+- `lake test` / `lake exe test` — packaged smoke tests.
+- Additional `lake exe …` targets for deeper smoke and performance runs (see README).
+
+## Related docs
+
+- [CI-CD.md](CI-CD.md)
+- [Quickstart.md](Quickstart.md)

@@ -2,293 +2,238 @@
 
 # lean-uprove
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/fraware/lean-uprove/actions)
-[![Lean 4](https://img.shields.io/badge/Lean%204-4.0.0-blue.svg)](https://leanprover.github.io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Performance](https://img.shields.io/badge/Performance-P50%20≤150ms-brightgreen.svg)](https://github.com/fraware/lean-uprove)
-[![Memory](https://img.shields.io/badge/Memory-≤256MB-lightblue.svg)](https://github.com/fraware/lean-uprove)
+**Universal-property proofs in Lean 4, with automation you can trace.**
 
-**A Lean 4 tactic for automating proofs involving universal properties in category theory**
+[![CI](https://github.com/fraware/lean-uprove/actions/workflows/ci.yml/badge.svg)](https://github.com/fraware/lean-uprove/actions/workflows/ci.yml)
+[![Lean](https://img.shields.io/badge/Lean-4.12.0-1f6feb.svg)](https://leanprover.github.io/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Mathlib](https://img.shields.io/badge/Mathlib-4.12.0-5c4dbf.svg)](https://github.com/leanprover-community/mathlib4)
 
-[Quick Start](#quick-start) • [Documentation](#documentation) • [Examples](#examples) • [API Reference](#api-reference) • [Contributing](#contributing)
+<br/>
+
+[Quick start](#quick-start) · [Documentation](#documentation) · [Examples](#examples) · [API](#api-reference) · [Contributing](#contributing)
+
+<br/>
 
 </div>
+
+> A tactic for category-theoretic goals: limits, colimits, (co)products, (co)equalizers, pullbacks, pushouts, and related patterns. When your goal matches a registered lemma, **`by uprove`** can close it; **`by uprove?`** shows the plan.
 
 ---
 
-## Features
+## Why lean-uprove
 
-<table>
-<tr>
-<td width="50%">
+| | |
+|:---|:---|
+| **Pattern-driven** | Matches Mathlib-style universal property statements and applies registered lemmas instead of ad-hoc search. |
+| **Bounded & predictable** | Step limits, timeouts, and explicit fallbacks keep automation from running away. |
+| **Inspectable** | Explainer mode prints a human-readable proof plan so you can audit what happened. |
+| **Same checks as CI** | Locally: `lake build`, `lake build UproveExamples`, `lake test`. |
 
-### **Universal Properties**
-- Automatically proves goals involving limits, colimits, exponentials
-- Handles (co)equalizers, (co)products, pullbacks/pushouts
-- Supports initial/terminal objects
+Design targets (not guarantees on every goal): about **150ms** P50, **800ms** P95, **256MB** peak memory in benchmark-style runs—see [Performance](#performance).
 
-### **High Performance**
-- **P50 ≤ 150ms** per call
-- **P95 ≤ 800ms** per call
-- **≤ 256MB** memory usage
-- **≥ 40%** reduction in overall proof time
+---
 
-</td>
-<td width="50%">
-
-### **Deterministic & Configurable**
-- Predictable time and search depth
-- Configurable timeouts and step limits
-- Multiple fallback strategies
-
-### **Explainer Mode**
-- `uprove?` prints exact proof steps
-- Full auditability and transparency
-- Human-readable proof plans
-
-</td>
-</tr>
-</table>
-
-## How It Works
+## How it works
 
 ```mermaid
-graph TD
-    A[Goal: Universal Property] --> B{Pattern Matching}
-    B -->|Match Found| C[Generate Proof Plan]
-    B -->|No Match| D[Fallback Tactics]
-    C --> E[Execute Proof Steps]
-    E --> F{Success?}
-    F -->|Yes| G[Proof Complete]
-    F -->|No| H[Try Alternative Strategy]
-    H --> I{Max Steps?}
-    I -->|No| C
-    I -->|Yes| D
-    D --> J[Fallback Success]
-    
-    style A fill:#e1f5fe
-    style G fill:#c8e6c9
-    style J fill:#c8e6c9
-    style C fill:#fff3e0
-    style E fill:#fff3e0
+flowchart LR
+  subgraph input [Your goal]
+    G[Universal property shape]
+  end
+  subgraph engine [lean-uprove]
+    M{Pattern match?}
+    P[Build proof plan]
+    E[Run steps / fallbacks]
+    G --> M
+    M -->|yes| P --> E
+    M -->|no| E
+  end
+  subgraph out [Result]
+    OK[Proof or reduced goal]
+  end
+  E --> OK
+
+  style G fill:#e8f4fc
+  style OK fill:#e6f4ea
+  style P fill:#fff8e6
 ```
 
-## Quick Start
+---
 
-Get up and running with lean-uprove in under 10 minutes!
+## Quick start
 
-### One-Command Installation
+### From this repository
 
-**Docker (Recommended):**
-```bash
-docker run --rm ghcr.io/fraware/lean-uprove:latest --help
-```
-
-**Installation Script:**
-```bash
-# Linux/macOS
-curl -fsSL https://raw.githubusercontent.com/fraware/lean-uprove/main/scripts/install.sh | bash
-
-# Windows
-curl -fsSL https://raw.githubusercontent.com/fraware/lean-uprove/main/scripts/install.bat -o install.bat
-install.bat
-```
-
-**From Source:**
 ```bash
 git clone https://github.com/fraware/lean-uprove.git
 cd lean-uprove
-make dev && make run
+lake build && lake build UproveExamples && lake test
 ```
 
-### Quick Test
+Optional: `make dev && make run` for a broader smoke path (see [Development](#development)).
+
+### In your own project
+
+**1.** Align your `lean-toolchain` with this package when you can.
+
+**2.** Add the dependency (Lake project file):
+
+```lean
+require «lean-uprove» from git
+  "https://github.com/fraware/lean-uprove.git" @ "main"   -- or a tag / commit
+```
+
+**3.** Import registration and the library (`import Uprove` alone does not load default registration):
+
+```lean
+import UproveRegisterInit
+import Uprove
+```
+
+**4.** Use the tactic when the goal matches a registered pattern:
+
+```lean
+-- by uprove
+-- by uprove?
+-- by uprove [Uprove.fastConfig]
+-- by uprove [{ maxSteps := 32, timeout := 1000 }]
+```
+
+**Mathlib 4.12** uses `limit.cone` and `colimit.cocone`. Many standard facts are `noncomputable def` with `limit.isLimit _` rather than `theorem … := by uprove`. Copy shapes from [`examples/BasicExamples.lean`](examples/BasicExamples.lean); build them with `lake build UproveExamples`.
+
+**Docker** (optional):
 
 ```bash
-# Test installation
-lean-uprove validate
-
-# Run examples
-lean-uprove examples
-
-# Run benchmarks
-lean-uprove benchmark
+docker run --rm ghcr.io/fraware/lean-uprove:latest --help
 ```
 
-### Basic Usage
+Lake remains the reliable way to build and test this package.
 
-```lean
-import Uprove
-
--- Simple universal property proof
-theorem my_proof : IsLimit (limitCone (pair X Y)) := by uprove
-
--- With explainer mode
-theorem explained_proof : IsLimit (limitCone (pair X Y)) := by uprove?
-
--- With custom configuration
-theorem configured_proof : IsLimit (limitCone (pair X Y)) := by uprove [maxSteps := 32]
-```
-
-### Add to Your Project
-
-Add to your `lakefile.lean`:
-
-```lean
-require uprove from git "https://github.com/fraware/lean-uprove.git"
-```
+---
 
 ## Documentation
 
-<table>
-<tr>
-<td width="33%">
+| | |
+|:--|:--|
+| [**Docs index**](docs/README.md) | All guides in one place |
+| [**Quickstart**](docs/Quickstart.md) | Toolchain, dependency, imports, naming |
+| [**Cookbook**](docs/Cookbook.md) | Patterns and configuration |
+| [**Troubleshooting**](docs/Troubleshooting.md) | Common errors and fixes |
+| [**CI/CD**](docs/CI-CD.md) | What runs in automation |
+| [**Architecture**](docs/architecture.md) | Layout and data flow |
+| [**Contributing**](CONTRIBUTING.md) | How to contribute |
 
-### **Guides**
-- [**Quickstart**](docs/Quickstart.md) - Get up and running in 90 seconds
-- [**Cookbook**](docs/Cookbook.md) - 20 common patterns and examples
-- [**Troubleshooting**](docs/Troubleshooting.md) - Common issues and solutions
+API reference: this README plus the Lean sources under `Uprove/` (there is no separate generated doc site yet).
 
-</td>
-<td width="33%">
-
-### **Development**
-- [**CI/CD**](docs/CI-CD.md) - Continuous integration setup
-- [**Contributing**](CONTRIBUTING.md) - How to contribute
-- [**Code of Conduct**](CODE_OF_CONDUCT.md) - Community guidelines
-
-</td>
-<td width="33%">
-
-### **Performance**
-- **Benchmarks** - Performance metrics and comparisons
-- **Profiling** - Memory and time analysis
-- **Optimization** - Best practices for speed
-- **Architecture** - [System design and components](docs/architecture.md)
-
-</td>
-</tr>
-</table>
+---
 
 ## Examples
 
-### Basic Usage
-
 ```lean
+import UproveRegisterInit
 import Uprove
+import Mathlib.CategoryTheory.Limits.HasLimits
+-- … your category and instances …
 
--- Simple limit proof
-theorem product_limit : IsLimit (limitCone (pair X Y)) := by uprove
-
--- Colimit proof
-theorem coproduct_colimit : IsColimit (colimitCocone (copair X Y)) := by uprove
+-- Typical Mathlib 4.12 style (see BasicExamples.lean for full lemmas):
+-- noncomputable def product_limit … : IsLimit (limit.cone (pair X Y)) := limit.isLimit _
 ```
 
-### Advanced Features
+Combine `by uprove?`, presets like `Uprove.thoroughConfig`, and manual `constructor` when automation only covers part of the goal.
 
-```lean
--- With explainer mode (shows proof steps)
-theorem explained_proof : IsLimit (limitCone (pair X Y)) := by uprove?
+---
 
--- With custom configuration
-theorem configured_proof : IsLimit (limitCone (pair X Y)) := by 
-  uprove [maxSteps := 32, timeout := 1000]
+## API reference
 
--- Multiple universal properties
-theorem multiple_goals : 
-  IsLimit (limitCone (pair X Y)) ∧ IsColimit (colimitCocone (copair X Y)) := by
-  constructor
-  · uprove
-  · uprove
-```
+Default registration lives in **`UproveRegisterInit`** ([`UproveRegisterInit.lean`](UproveRegisterInit.lean)). Import it once. If you only import `Uprove.Tactics`, you still need **`UproveRegisterInit`** unless you register everything with `@[uproveLemma]` / `@[uprove.iso]`.
 
-### Real-World Example
+### Tactics
 
-```lean
--- Complex category theory proof
-theorem pullback_preserves_limits {C : Type*} [Category C] 
-  (F : C ⥤ C) (preserves_limits : PreservesLimits F) :
-  IsLimit (F.mapCone (limitCone (pair X Y))) := by uprove
-```
-
-## API Reference
-
-### Core Tactics
-
-| Tactic | Description | Example |
-|--------|-------------|---------|
-| `by uprove` | Closes or reduces universal property goals | `theorem p : IsLimit c := by uprove` |
-| `by uprove?` | Same as above, plus human-readable proof plan | `theorem p : IsLimit c := by uprove?` |
-| `uprove [cfg]` | Interactive form with configuration options | `uprove [maxSteps := 32]` |
+| Tactic | Role |
+|:--|:--|
+| `by uprove` | Close or simplify goals that match a registered pattern |
+| `by uprove?` | Same, plus a printed proof plan |
+| `by uprove [cfg]` | One configuration value, e.g. `Uprove.fastConfig` or `{ maxSteps := 32, timeout := 1000 }` |
 
 ### Attributes
 
-| Attribute | Purpose | Usage |
-|-----------|---------|-------|
-| `@[uprove]` | Register universal property lemmas | `@[uprove] theorem my_lemma : ...` |
-| `@[uprove.iso]` | Register canonical isomorphisms | `@[uprove.iso] def my_iso : ...` |
+| Attribute | Role |
+|:--|:--|
+| `@[uproveLemma]` | Register a lemma for matching |
+| `@[uprove.iso]` | Register an isomorphism hook |
 
-### Configuration Options
+### Common options
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `uprove.maxSteps` | 64 | Maximum proof steps |
-| `uprove.timeout` | 2000ms | Timeout in milliseconds |
-| `uprove.simpSet` | - | Named simplification set |
-| `uprove.trace` | false | Enable tracing |
-| `uprove.strict` | false | Fail instead of fallback |
-| `uprove.fallback` | `["simp", "aesop"]` | Fallback tactics |
+| Field | Typical default | Meaning |
+|:--|:--|:--|
+| `maxSteps` | `64` | Step cap |
+| `timeout` | `2000` (ms) | Time budget |
+| `simpSet` | — | Named simp set |
+| `trace` | `false` | Extra logging |
+| `strict` | `false` | Fail instead of falling back |
+| `fallback` | `["simp", "aesop"]` | Fallback tactic names |
+
+Full structure: `Uprove/Configuration.lean`.
+
+---
 
 ## Performance
 
-<div align="center">
+**Targets** from benchmark-style runs in this repository; cold cache, large projects, or unmatched goals may differ.
 
-| Metric | Value | Description |
-|--------|-------|-------------|
-| **P50 Latency** | ≤ 150ms | Median response time |
-| **P95 Latency** | ≤ 800ms | 95th percentile response time |
-| **Memory Usage** | ≤ 256MB | Peak memory per process |
-| **Efficiency Gain** | ≥ 40% | Reduction in overall proof time |
+| Metric | Target | Notes |
+|:--|:--|:--|
+| P50 latency | ≤ 150 ms | Per successful invocation |
+| P95 latency | ≤ 800 ms | Tail behavior |
+| Peak memory | ≤ 256 MB | Benchmark configuration |
+| Proof time | ≥ 40% faster | Versus manual scripts in measured scenarios |
 
-</div>
-
-### Benchmark Results
-
-```lean
--- Example benchmark output
-Benchmark Suite: Universal Properties
-├── Product Limits: 142ms (P50), 756ms (P95)
-├── Coproduct Colimits: 138ms (P50), 723ms (P95)
-├── Equalizers: 156ms (P50), 812ms (P95)
-└── Pullbacks: 149ms (P50), 789ms (P95)
+```text
+Example summary (illustrative)
+├── Product limits     ~142 ms (P50), ~756 ms (P95)
+├── Coproduct colimits ~138 ms (P50), ~723 ms (P95)
+├── Equalizers         ~156 ms (P50), ~812 ms (P95)
+└── Pullbacks          ~149 ms (P50), ~789 ms (P95)
 ```
 
-## Installation
+Optional: `lake exe uprove-benchmark` (native linking may fail on some Windows toolchains).
 
-### Option 1: Docker (Recommended)
+---
+
+## Installation (all options)
+
+<details>
+<summary><strong>Docker</strong></summary>
 
 ```bash
-# Run directly
 docker run --rm ghcr.io/fraware/lean-uprove:latest --help
-
-# Pull and run locally
 docker pull ghcr.io/fraware/lean-uprove:latest
 docker run --rm ghcr.io/fraware/lean-uprove:latest test
 ```
 
-### Option 2: Installation Script
+</details>
 
-**Linux/macOS:**
+<details>
+<summary><strong>Install scripts</strong></summary>
+
+Linux / macOS:
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/fraware/lean-uprove/main/scripts/install.sh | bash
 ```
 
-**Windows:**
+Windows (PowerShell):
+
 ```powershell
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/fraware/lean-uprove/main/scripts/install.bat" -OutFile "install.bat"
 .\install.bat
 ```
 
-### Option 3: From Source
+</details>
+
+<details>
+<summary><strong>From source</strong></summary>
 
 ```bash
 git clone https://github.com/fraware/lean-uprove.git
@@ -296,120 +241,96 @@ cd lean-uprove
 make dev && make run
 ```
 
-### Option 4: As Dependency
+Verify:
 
-Add to your `lakefile.lean`:
+```bash
+lake build
+lake build UproveExamples
+lake test
+lake exe test
+```
+
+</details>
+
+<details>
+<summary><strong>As a dependency</strong></summary>
 
 ```lean
-require uprove from git "https://github.com/fraware/lean-uprove.git"
+require «lean-uprove» from git
+  "https://github.com/fraware/lean-uprove.git" @ "main"
 ```
 
-### Verification
-
-After installation, verify everything works:
-
-```bash
-# Test installation
-lean-uprove validate
-
-# Run examples
-lean-uprove examples
-
-# Run benchmarks
-lean-uprove benchmark
-```
-
-## Development
-
-### Quick Setup
-
-```bash
-# Clone and build
-git clone https://github.com/fraware/lean-uprove.git
-cd lean-uprove
-lake build
-
-# Run tests
-lake test
-lake exe uprove-test
-
-# Run benchmarks
-lake exe uprove-benchmark
-
-# Build documentation
-lake build docs
-```
-
-### Test Suites
-
-| Suite | Command | Description |
-|-------|---------|-------------|
-| **Core Tests** | `lake exe uprove-test-simple` | Basic functionality |
-| **Production Tests** | `lake exe uprove-test-production` | Full integration |
-| **Performance Tests** | `lake exe uprove-performance-validation` | Speed benchmarks |
-| **Real Tests** | `lake exe uprove-test-real` | Real-world scenarios |
-
-## Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Quick Contribution Checklist
-
-- [ ] Fork the repository
-- [ ] Create a feature branch
-- [ ] Add tests for new functionality
-- [ ] Ensure all tests pass
-- [ ] Submit a pull request
-
-## License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-## Support & Community
-
-<table>
-<tr>
-<td width="50%">
-
-### **Bug Reports**
-- [GitHub Issues](https://github.com/fraware/lean-uprove/issues)
-- Include reproduction steps
-- Attach relevant logs
-
-</td>
-<td width="50%">
-
-### **Discussions**
-- [GitHub Discussions](https://github.com/fraware/lean-uprove/discussions)
-- Ask questions
-- Share ideas
-
-</td>
-</tr>
-</table>
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for detailed version history and breaking changes.
-
-## Acknowledgments
-
-<div align="center">
-
-**Built with dedication by the Lean community**
-
-Built on top of [**Mathlib4**](https://github.com/leanprover-community/mathlib4) • 
-Inspired by the **Lean 4 community** • 
-Thanks to all **contributors and users**
-
-</div>
+</details>
 
 ---
 
+## Development
+
+```bash
+lake build
+lake build UproveExamples
+lake test
+lake exe test
+# optional:
+lake exe uprove-benchmark
+```
+
+### Tests (excerpt)
+
+| Suite | Command |
+|:--|:--|
+| Default | `lake test` |
+| Smoke | `lake exe test` |
+| Core | `lake exe uprove-test-simple` |
+| Production | `lake exe uprove-test-production` |
+| Performance | `lake exe uprove-performance-validation` |
+| Real-world | `lake exe uprove-test-real` |
+
+`make test` runs additional executables.
+
+---
+
+## Contributing
+
+See [**CONTRIBUTING.md**](CONTRIBUTING.md).
+
+- [ ] `lake build` and `lake build UproveExamples` pass  
+- [ ] `lake test` passes when you change the test driver  
+- [ ] Update docs when commands or behavior change  
+
+[**Lean community code of conduct**](https://leanprover-community.github.io/contribute/code_of_conduct.html)
+
+---
+
+## License
+
+[MIT](LICENSE)
+
+---
+
+## Community
+
+| | |
+|:--|:--|
+| **Issues** | [github.com/fraware/lean-uprove/issues](https://github.com/fraware/lean-uprove/issues) |
+| **Discussions** | [github.com/fraware/lean-uprove/discussions](https://github.com/fraware/lean-uprove/discussions) |
+
+---
+
+## Releases
+
+Version notes and assets: [**GitHub Releases**](https://github.com/fraware/lean-uprove/releases)
+
+---
+
+## Acknowledgments
+
+Built with [**Mathlib4**](https://github.com/leanprover-community/mathlib4) and the Lean 4 ecosystem. Thanks to everyone who reports issues, suggests patterns, and contributes proofs.
+
 <div align="center">
 
-**[Back to Top](#lean-uprove)**
+<br/>
 
-Made with dedication for the Lean community
+[↑ Back to top](#lean-uprove)
 
 </div>

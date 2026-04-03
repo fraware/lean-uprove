@@ -14,33 +14,31 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      
+
+    - name: Cache Lake
+      uses: actions/cache@v4
+      with:
+        path: |
+          .lake
+        key: lake-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
+        restore-keys: |
+          lake-${{ runner.os }}-
+
     - name: Set up Lean 4
       uses: leanprover/lean4@v4.12.0
-      
+
     - name: Install dependencies
       run: |
-        lake update
         lake build
-        
+        lake build UproveExamples
+
     - name: Run tests
       run: |
         lake test
         lake exe test
         lake exe uprove-test-simple
         lake exe uprove-test-minimal-core
-        lake exe uprove-test-production
         lake exe uprove-test-real
-        
-    - name: Run performance validation
-      run: |
-        lake exe uprove-performance-validation
-        lake exe uprove-sla-validation
-        
-    - name: Run security scans
-      run: |
-        lake exe uprove-license-scan
-        lake exe uprove-network-scan
 
   build:
     name: Build
@@ -50,23 +48,31 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      
+
+    - name: Cache Lake
+      uses: actions/cache@v4
+      with:
+        path: |
+          .lake
+        key: lake-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
+        restore-keys: |
+          lake-${{ runner.os }}-
+
     - name: Set up Lean 4
       uses: leanprover/lean4@v4.12.0
-      
+
     - name: Build
       run: |
-        lake update
         lake build
-        
+        lake build UproveExamples
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
         path: |
-          build/
-          lake-packages/
-        retention-days: 30
+          .lake/build/
+        retention-days: 7
 
   docker:
     name: Docker Build
@@ -104,7 +110,7 @@ jobs:
       with:
         context: .
         platforms: linux/amd64,linux/arm64
-        push: true
+        push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha

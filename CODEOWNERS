@@ -5,16 +5,16 @@
 /Uprove/Tactics.lean @fraware
 /Uprove/Planner.lean @fraware
 
-# Pattern database and attributes
+# Pattern database and registration
 /Uprove/Patterns.lean @fraware @leanprover-community/category-theory
-/Uprove/Attributes.lean @fraware @leanprover-community/category-theory
+/UproveRegisterInit.lean @fraware @leanprover-community/category-theory
 
 # Configuration and telemetry
 /Uprove/Configuration.lean @fraware
 /Uprove/Telemetry.lean @fraware
 
 # Performance and benchmarking
-/Benchmark.lean @fraware @leanprover-community/performance
+/bench/Benchmark.lean @fraware @leanprover-community/performance
 /Test.lean @fraware @leanprover-community/testing
 
 # CI/CD and infrastructure
@@ -23,8 +23,6 @@
 # Documentation
 /docs/ @fraware @leanprover-community/documentation
 /README.md @fraware
-/CHANGELOG.md @fraware
-
 # Project configuration
 /lakefile.lean @fraware
 /lake-manifest.json @fraware
