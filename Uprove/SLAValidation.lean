@@ -61,10 +61,10 @@ def generateSLAReport (reports : List SLAReport) : String :=
   for slaReport in reports do
     let status := if slaReport.overall_ok then "✅ PASS" else "❌ FAIL"
     report := report ++ s!"{status} {slaReport.testName}\n"
-    report := report ++ s!"  P50: {'PASS' if slaReport.p50_ok else 'FAIL'} ({slaReport.p50_ok})\n"
-    report := report ++ s!"  P95: {'PASS' if slaReport.p95_ok else 'FAIL'} ({slaReport.p95_ok})\n"
-    report := report ++ s!"  Memory: {'PASS' if slaReport.memory_ok else 'FAIL'} ({slaReport.memory_ok})\n"
-    report := report ++ s!"  Success: {'PASS' if slaReport.success_ok else 'FAIL'} ({slaReport.success_ok})\n"
+    report := report ++ s!"  P50: {(if slaReport.p50_ok then "PASS" else "FAIL")} ({slaReport.p50_ok})\n"
+    report := report ++ s!"  P95: {(if slaReport.p95_ok then "PASS" else "FAIL")} ({slaReport.p95_ok})\n"
+    report := report ++ s!"  Memory: {(if slaReport.memory_ok then "PASS" else "FAIL")} ({slaReport.memory_ok})\n"
+    report := report ++ s!"  Success: {(if slaReport.success_ok then "PASS" else "FAIL")} ({slaReport.success_ok})\n"
     report := report ++ s!"  Details: {slaReport.details}\n\n"
 
     if slaReport.overall_ok then

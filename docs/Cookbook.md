@@ -1,6 +1,6 @@
 # Uprove cookbook
 
-Recipes and patterns for **`uprove`**. This repository targets **Mathlib 4.12.x**. If your Mathlib version differs, check `examples/BasicExamples.lean` and upstream docs for naming.
+Recipes and patterns for **`uprove`**. This repository targets **Mathlib v4.31.0-rc1**. If your Mathlib version differs, check `examples/BasicExamples.lean`, `examples/ManualProofs.lean`, and upstream docs for naming.
 
 **Imports (recommended):**
 
@@ -13,7 +13,7 @@ import Uprove
 
 ## Limits and colimits (illustrative)
 
-These snippets are **templates**. In Mathlib 4.12, canonical cones use `limit.cone` / `colimit.cocone` and typeclass names like `HasBinaryProduct`. Many statements are **`noncomputable def`** with `limit.isLimit _` / `colimit.isColimit _` rather than `by uprove`, depending on whether your goal is a `Prop`.
+These snippets are **templates**. Canonical cones use `limit.cone` / `colimit.cocone` and typeclass names like `HasBinaryProduct`. Many statements are **`noncomputable def`** with `limit.isLimit _` / `colimit.isColimit _` rather than `by uprove`, depending on whether your goal is a `Prop`.
 
 ### Binary product
 
@@ -105,5 +105,7 @@ Pattern matching and normalization in `Uprove/Core.lean` are still **partial** r
 
 ## References
 
-- `examples/BasicExamples.lean` — CI-checked Mathlib 4.12 examples.
+- `examples/BasicExamples.lean` — CI-checked abstract universal-property examples.
+- `examples/ManualProofs.lean` — explicit `Type` category proofs with `by` scripts.
+- `docs/EXTRACTION_LEDGER.md` — Mathlib upstream candidate tracking.
 - [Quickstart](Quickstart.md), [Troubleshooting](Troubleshooting.md).

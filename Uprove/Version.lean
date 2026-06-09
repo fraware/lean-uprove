@@ -6,7 +6,7 @@ namespace Uprove
 def packageVersion : String := "0.2.0"
 
 /-- Mathlib git revision pinned in [lakefile.lean](lakefile.lean); update when bumping the pin. -/
-def mathlibPinRev : String := "v4.12.0"
+def mathlibPinRev : String := "v4.31.0-rc1"
 
 /-- Lean toolchain string from the compiler (runtime). -/
 def leanToolchainString : String :=

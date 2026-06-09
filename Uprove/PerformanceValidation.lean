@@ -98,7 +98,7 @@ def measurePerformance (testName : String) (goal : Lean.Expr) (config : UproveCo
     let gcTime := ((endGcTime - startGcTime) / 1000000).toNat
 
     let (success, patternMatched, confidence) := match matchResult with
-    | some match => (true, some match.up.name, some match.confidence)
+    | some pm => (true, some pm.up.name, some pm.confidence)
     | none => (false, none, none)
 
     pure {
@@ -287,7 +287,7 @@ def generatePerformanceReport (suite : PerformanceSuite) (validations : List SLA
   )).foldl (· + ·) "" ++
   s!"\nCritical Failures: {criticalFailures.length}\n" ++
   s!"Warnings: {warnings.length}\n" ++
-  s!"Overall SLA Compliance: {'✅' if overallCompliant else '❌'}\n"
+  s!"Overall SLA Compliance: {(if overallCompliant then "PASS" else "FAIL")}\n"
 
 -- Export performance data to JSON
 def exportPerformanceData (suite : PerformanceSuite) (validations : List SLAValidation) (filename : String) : IO Unit := do

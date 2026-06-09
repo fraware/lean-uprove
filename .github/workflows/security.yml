@@ -9,7 +9,7 @@ on:
     - cron: '0 3 * * *'  # Daily at 3 AM UTC
 
 env:
-  LEAN_VERSION: "4.12.0"
+  LEAN_VERSION: "4.31.0-rc1"
 
 jobs:
   dependency-scan:

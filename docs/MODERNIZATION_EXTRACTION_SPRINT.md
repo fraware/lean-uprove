@@ -10,9 +10,9 @@ The repository is strategically valuable as an internal audit tool for Mathlib c
 
 Current constraints:
 
-- Current toolchain in `lean-toolchain`: `leanprover/lean4:v4.12.0`.
-- `lakefile.lean` pins Mathlib at `v4.12.0`.
-- The README explicitly references Mathlib 4.12 shapes such as `limit.cone`, `colimit.cocone`, and `limit.isLimit _`.
+- Current toolchain in `lean-toolchain`: `leanprover/lean4:v4.31.0-rc1`.
+- `lakefile.lean` pins Mathlib at `v4.31.0-rc1`.
+- Canonical shapes remain `limit.cone`, `colimit.cocone`, and `limit.isLimit _` on the v4.31 line.
 - The public import currently includes core logic, tactics, configuration, patterns, planner code, tracing support, examples, and test-support modules.
 
 ## Sprint objective
@@ -131,4 +131,4 @@ The following should remain repository-local during this sprint:
 
 ## Build certification status
 
-This document is a planning and extraction artifact. It does not certify that the repository has been built on Lean 4.31 yet. Certification requires a successful local or CI run of the commands in Gate 1.
+Certified on branch `modernize/lean-4-31-extraction` with Gate 1 commands passing. See [`EXTRACTION_LEDGER.md`](EXTRACTION_LEDGER.md) for per-construction upstream tracking.

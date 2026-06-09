@@ -207,6 +207,6 @@ Average Execution Time: {avgTime}ms
 Success Rate: {(passedTests.toFloat / totalTests.toFloat * 100):.1f}%
 
 Detailed Results:
-{results.map (fun r => s!"{r.testName}: {'PASS' if r.passed else 'FAIL'} ({r.executionTime}ms)").join "\n"}"
+{results.map (fun r => s!"{r.testName}: {(if r.passed then "PASS" else "FAIL")} ({r.executionTime}ms)").join "\n"}"
 
 end Uprove.TestCategoryTheory

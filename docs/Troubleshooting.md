@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Common issues when using **`uprove`** with **lean-uprove** on Lean 4.12 and the pinned Mathlib.
+Common issues when using **`uprove`** with **lean-uprove** on Lean 4.31 and the pinned Mathlib.
 
 ## "No matching universal property pattern found"
 
@@ -63,5 +63,5 @@ Some executables link a large dependency graph and can fail on Windows. Prefer `
 ## Getting help
 
 1. [Cookbook](Cookbook.md) for idioms (confirm names against your Mathlib version).
-2. `examples/BasicExamples.lean` for Mathlib 4.12 naming (`limit.cone`, `colimit.cocone`, `HasBinaryProduct`, …).
+2. `examples/BasicExamples.lean` and `examples/ManualProofs.lean` for current naming (`limit.cone`, `colimit.cocone`, `HasBinaryProduct`, …).
 3. GitHub Issues with a small repro, imports, and `uprove?` output when possible.

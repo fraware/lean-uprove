@@ -6,17 +6,21 @@ package «lean-uprove» where
   moreLeanArgs := #["-DautoImplicit=false"]
 
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4.git" @ "v4.12.0"
+  "https://github.com/leanprover-community/mathlib4.git" @ "v4.31.0-rc1"
 
 @[default_target]
 lean_lib «Uprove» where
-  -- `UproveRegisterInit` lives next to `Uprove.lean` (not under `Uprove/`) to avoid a Lean 4.12
+  -- `UproveRegisterInit` lives next to `Uprove.lean` (not under `Uprove/`) to avoid a
   -- Windows crash when a `Uprove.*` module imports sibling registration initializers.
-  roots := #[`Uprove, `UproveRegisterInit]
+  roots := #[`Uprove, `UproveRegisterInit, `TestRegisterInit]
 
 /-- Mathlib examples and integration theorems; must compile in CI. -/
 lean_lib «UproveExamples» where
-  roots := #[`examples.BasicExamples]
+  roots := #[`examples.BasicExamples, `examples.ManualProofs]
+
+/-- Optional tactic comparisons; not part of the extraction CI gate. -/
+lean_lib «UproveComparison» where
+  roots := #[`UproveComparisonExamples]
 
 @[test_driver]
 lean_exe test where

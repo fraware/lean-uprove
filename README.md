@@ -5,9 +5,9 @@
 **Universal-property proofs in Lean 4, with automation you can trace.**
 
 [![CI](https://github.com/fraware/lean-uprove/actions/workflows/ci.yml/badge.svg)](https://github.com/fraware/lean-uprove/actions/workflows/ci.yml)
-[![Lean](https://img.shields.io/badge/Lean-4.12.0-1f6feb.svg)](https://leanprover.github.io/)
+[![Lean](https://img.shields.io/badge/Lean-4.31.0--rc1-1f6feb.svg)](https://leanprover.github.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Mathlib](https://img.shields.io/badge/Mathlib-4.12.0-5c4dbf.svg)](https://github.com/leanprover-community/mathlib4)
+[![Mathlib](https://img.shields.io/badge/Mathlib-4.31.0--rc1-5c4dbf.svg)](https://github.com/leanprover-community/mathlib4)
 
 <br/>
 
@@ -100,7 +100,7 @@ import Uprove
 -- by uprove [{ maxSteps := 32, timeout := 1000 }]
 ```
 
-**Mathlib 4.12** uses `limit.cone` and `colimit.cocone`. Many standard facts are `noncomputable def` with `limit.isLimit _` rather than `theorem … := by uprove`. Copy shapes from [`examples/BasicExamples.lean`](examples/BasicExamples.lean); build them with `lake build UproveExamples`.
+**Current Mathlib** (v4.31 line) still uses `limit.cone`, `colimit.cocone`, and `limit.isLimit _` / `colimit.isColimit _`. Copy shapes from [`examples/BasicExamples.lean`](examples/BasicExamples.lean); build with `lake build UproveExamples`. See [`docs/EXTRACTION_LEDGER.md`](docs/EXTRACTION_LEDGER.md) for upstream targets.
 
 **Docker** (optional):
 
@@ -136,8 +136,8 @@ import Uprove
 import Mathlib.CategoryTheory.Limits.HasLimits
 -- … your category and instances …
 
--- Typical Mathlib 4.12 style (see BasicExamples.lean for full lemmas):
--- noncomputable def product_limit … : IsLimit (limit.cone (pair X Y)) := limit.isLimit _
+-- Typical Mathlib style (see BasicExamples.lean for manual + uniqueness lemmas):
+-- noncomputable def product_manual … : IsLimit (limit.cone (pair X Y)) := limit.isLimit (pair X Y)
 ```
 
 Combine `by uprove?`, presets like `Uprove.thoroughConfig`, and manual `constructor` when automation only covers part of the goal.
