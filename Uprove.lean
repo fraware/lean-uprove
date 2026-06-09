@@ -1,11 +1,15 @@
 import Uprove.Version
 import Uprove.Core
-import Uprove.Tactics
 import Uprove.Configuration
 import Uprove.Patterns
+import Uprove.ProofPatterns
 import Uprove.Planner
-import Uprove.Telemetry
-import Uprove.Timeout
-import Uprove.TestInfrastructure
-import Uprove.Performance
-import Uprove.SmokeTest
+import Uprove.Tactics
+import Uprove.Examples
+
+/-!
+Stable public surface for lean-uprove.
+
+Import `UproveRegisterInit` once in your project to load default pattern registration.
+Performance, smoke-test, and test-support modules are intentionally excluded.
+-/

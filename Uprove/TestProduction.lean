@@ -59,7 +59,7 @@ def measurePerformance (testName : String) (goal : Lean.Expr) (config : UproveCo
     let memory := (endMemory - startMemory).toNat
 
     let (success, patternMatched, confidence) := match matchResult with
-    | some match => (true, some match.up.name, some match.confidence)
+    | some pm => (true, some pm.up.name, some pm.confidence)
     | none => (false, none, none)
 
     pure {

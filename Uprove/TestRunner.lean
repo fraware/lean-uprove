@@ -161,11 +161,11 @@ def runAllTests (config : TestRunnerConfig) : IO TestRunnerResult := do
   -- Generate summary report
   IO.println "📊 Test Suite Summary"
   IO.println "====================="
-  IO.println s!"Unit Tests: {'✅' if unitTestsPassed else '❌'}"
-  IO.println s!"Performance Tests: {'✅' if performanceTestsPassed else '❌'}"
-  IO.println s!"SLA Validation: {'✅' if slaValidationPassed else '❌'}"
-  IO.println s!"Flakiness Tests: {'✅' if flakinessTestsPassed else '❌'}"
-  IO.println s!"Overall: {'✅' if overallPassed else '❌'}"
+  IO.println s!"Unit Tests: {(if unitTestsPassed then "PASS" else "FAIL")}"
+  IO.println s!"Performance Tests: {(if performanceTestsPassed then "PASS" else "FAIL")}"
+  IO.println s!"SLA Validation: {(if slaValidationPassed then "PASS" else "FAIL")}"
+  IO.println s!"Flakiness Tests: {(if flakinessTestsPassed then "PASS" else "FAIL")}"
+  IO.println s!"Overall: {(if overallPassed then "PASS" else "FAIL")}"
   IO.println s!"Total Duration: {totalDuration}ms"
 
   if !allErrors.isEmpty then

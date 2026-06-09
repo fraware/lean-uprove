@@ -1,114 +1,43 @@
+import TestRegisterInit
 import Lean.Expr
 import Uprove.Core
 import Uprove.Configuration
-import Uprove.Patterns
-import Uprove.Tactics
 
-namespace Uprove
+open Uprove
 
--- Simple test runner that works without mathlib
+/-- Smoke-test executable for `lake exe uprove-test-simple` (Mathlib-free link). -/
 def main : IO Unit := do
-  IO.println "🧪 Running Uprove Production Test Suite"
-  IO.println "====================================="
-
-  -- Test 1: Core functionality
-  IO.println "\n📋 Testing Core Functionality"
-  IO.println "============================="
+  registerTestPatterns
+  IO.println "Running Uprove production test suite"
+  IO.println "===================================="
 
   let config := defaultConfig
-  IO.println s!"✅ Configuration loaded: {config}"
-
-  -- Test 2: Pattern registration
-  IO.println "\n📋 Testing Pattern Registration"
-  IO.println "==============================="
+  IO.println s!"Configuration (maxSteps={config.maxSteps}, timeout={config.timeout})"
 
   let patterns ← getRegisteredPatterns
-  IO.println s!"✅ Registered patterns: {patterns.length}"
-  for pattern in patterns do
-    IO.println s!"  - {pattern.name}"
-
-  -- Test 3: Isomorphism registration
-  IO.println "\n📋 Testing Isomorphism Registration"
-  IO.println "==================================="
+  IO.println s!"Registered patterns: {patterns.length}"
 
   let isos ← getRegisteredIsomorphisms
-  IO.println s!"✅ Registered isomorphisms: {isos.length}"
-  for (from, to) in isos do
-    IO.println s!"  - iso registered"
-
-  -- Test 4: Pattern matching
-  IO.println "\n📋 Testing Pattern Matching"
-  IO.println "==========================="
+  IO.println s!"Registered isomorphisms: {isos.length}"
 
   let testGoals := [
-    ("Product", Lean.mkConst ``CategoryTheory.Limits.IsLimit),
-    ("Coproduct", Lean.mkConst ``CategoryTheory.Limits.IsColimit),
-    ("Equalizer", Lean.mkConst ``CategoryTheory.Limits.IsLimit)
+    ("Product", Lean.mkConst ``List),
+    ("Coproduct", Lean.mkConst ``Array),
+    ("Equalizer", Lean.mkConst ``Nat)
   ]
 
   for (name, goal) in testGoals do
-    let matchResult := matchUniversalProperty goal patterns
-    match matchResult with
-    | some match =>
-      IO.println s!"✅ {name}: Matched {match.up.name} (confidence: {match.confidence})"
-    | none =>
-      IO.println s!"⚠️  {name}: No pattern match found"
-
-  -- Test 5: Performance measurement
-  IO.println "\n📋 Testing Performance Measurement"
-  IO.println "=================================="
+    match matchUniversalProperty goal patterns with
+    | some pm => IO.println s!"{name}: matched {pm.up.name}"
+    | none => IO.println s!"{name}: no pattern match"
 
   let startTime ← IO.monoMsNow
-  let startMemory ← IO.getMemoryUsage
+  let _ ← IO.sleep 10
+  let duration := (← IO.monoMsNow) - startTime
+  IO.println s!"Performance sample: {duration}ms"
 
-  -- Simulate some work
-  let _ ← IO.sleep 10 -- 10ms
+  match validateConfig config with
+  | none => IO.println "Configuration validation: PASS"
+  | some error => IO.println s!"Configuration validation: FAIL - {error}"
 
-  let endTime ← IO.monoMsNow
-  let endMemory ← IO.getMemoryUsage
-
-  let duration := (endTime - startTime).toNat
-  let memory := (endMemory - startMemory).toNat
-
-  IO.println s!"✅ Performance test: {duration}ms, {memory} bytes"
-
-  -- Test 6: SLA validation
-  IO.println "\n📋 Testing SLA Validation"
-  IO.println "========================"
-
-  let p50Ok := duration ≤ 150
-  let p95Ok := duration ≤ 800
-  let memoryOk := memory ≤ 256 * 1024 * 1024
-
-  IO.println s!"✅ P50 ≤ 150ms: {'PASS' if p50Ok else 'FAIL'} ({duration}ms)"
-  IO.println s!"✅ P95 ≤ 800ms: {'PASS' if p95Ok else 'FAIL'} ({duration}ms)"
-  IO.println s!"✅ Memory ≤ 256MB: {'PASS' if memoryOk else 'FAIL'} ({memory / (1024 * 1024)}MB)"
-
-  -- Test 7: Configuration validation
-  IO.println "\n📋 Testing Configuration Validation"
-  IO.println "==================================="
-
-  let configValidation := validateConfig config
-  match configValidation with
-  | none => IO.println "✅ Configuration validation: PASS"
-  | some error => IO.println s!"❌ Configuration validation: FAIL - {error}"
-
-  -- Test 8: Telemetry
-  IO.println "\n📋 Testing Telemetry"
-  IO.println "==================="
-
-  if config.enableTelemetry then
-    IO.println "✅ Telemetry enabled"
-  else
-    IO.println "ℹ️  Telemetry disabled (normal for testing)"
-
-  -- Summary
-  IO.println "\n📊 Test Summary"
-  IO.println "==============="
-  IO.println "Tests run: 8"
-  IO.println "Tests passed: 8"
-  IO.println "Tests failed: 0"
-  IO.println ""
-  IO.println "🎉 All tests passed! Production ready!"
-
-end Uprove
+  IO.println "All checks completed."

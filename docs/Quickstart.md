@@ -1,6 +1,6 @@
 # Quickstart
 
-Use **Lean 4.12.0** with a compatible **Mathlib** line. This repository pins Mathlib for reproducible builds; match your project’s `lean-toolchain` when you depend on this package.
+Use **Lean 4.31.0-rc1** with the pinned **Mathlib** line (`v4.31.0-rc1` in `lakefile.lean`). Match your project’s `lean-toolchain` when you depend on this package.
 
 ## Add as a dependency
 
@@ -29,7 +29,7 @@ import Uprove
 
 If you only `import Uprove.Tactics`, still add **`import UproveRegisterInit`** once so defaults are registered.
 
-## Minimal example (Mathlib 4.12)
+## Minimal example (current Mathlib)
 
 Limits are often data, not a bare `Prop`. The bundled examples use `noncomputable def` and `limit.isLimit _`.
 

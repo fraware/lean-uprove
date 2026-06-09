@@ -1,7 +1,7 @@
 # lean-uprove Makefile
 # Provides one-command install, run, and release capabilities
 
-.PHONY: help dev run test build clean release install uninstall docker-build docker-run validate
+.PHONY: help dev run test build clean release install uninstall docker-build docker-run validate gate1
 
 # Default target
 help:
@@ -18,6 +18,7 @@ help:
 	@echo "  uninstall - Remove lean-uprove installation"
 	@echo "  docker-build - Build Docker image"
 	@echo "  docker-run   - Run Docker container"
+	@echo "  gate1     - Run Gate 1 extraction acceptance (see docs/EXTRACTION_LEDGER.md)"
 	@echo "  validate  - Validate CI/CD pipeline"
 	@echo ""
 	@echo "Quick start:"
@@ -68,7 +69,8 @@ test:
 # Build the project
 build:
 	@echo "Building lean-uprove..."
-	@lake build
+	@lake build Uprove
+	@lake build UproveExamples
 	@echo "✅ Build completed!"
 
 # Clean build artifacts
@@ -131,6 +133,16 @@ docker-build:
 docker-run:
 	@echo "Running Docker container..."
 	@docker run --rm ghcr.io/fraware/lean-uprove:latest --help
+
+# Gate 1: modernization and extraction acceptance
+gate1:
+	@echo "Running Gate 1 verification..."
+	@if [ -f scripts/verify-gate1.sh ]; then \
+		chmod +x scripts/verify-gate1.sh && \
+		./scripts/verify-gate1.sh; \
+	else \
+		echo "scripts/verify-gate1.sh not found"; exit 1; \
+	fi
 
 # Validate CI/CD pipeline
 validate:
