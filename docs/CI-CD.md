@@ -1,27 +1,39 @@
 # CI/CD
 
-What runs in GitHub Actions and how to mirror it locally.
+What runs in GitHub Actions and how to mirror it locally (Lean **4.31.0-rc1** / Mathlib **v4.31.0-rc1**).
 
 ## Workflows
 
-- **`ci.yml`** — On pushes to `main` / `develop` and PRs to `main`: caches build outputs, runs `lake build`, `lake build UproveExamples`, `lake test`, `lake exe test`, and selected test executables. Builds Docker on non-PR events (or as configured in the file). Runs install-script and Makefile smoke steps.
-- **`performance.yml`** — Scheduled and branch builds; performance-oriented smoke (see workflow file).
-- **`security.yml`** — Security scanning with pinned third-party action versions where possible.
-- **`release.yml`** — Runs on version tags; builds, tests, publishes the container image, and creates a GitHub Release.
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `ci.yml` | Push to `main`/`develop`, PRs to `main` | Gate 1 build + test executables |
+| `performance.yml` | Schedule, branch pushes | Performance smoke |
+| `security.yml` | Branch pushes | Security scanning |
+| `release.yml` | Version tags | Release build + container |
 
-Details change over time; open `.github/workflows/` for the exact steps.
+Open `.github/workflows/` for exact steps.
 
-## Match CI locally
+## Gate 1 (extraction acceptance)
 
 ```bash
-lake build
+lake update
+lake build Uprove
 lake build UproveExamples
 lake test
-lake exe test
+lake exe uprove-test-simple
+lake exe uprove-test-real
 ```
 
-Use the same `lean-toolchain` as this repo so Mathlib resolves consistently.
+Or run `scripts/verify-gate1.sh` (`.bat` on Windows).
 
-## Libraries in this package
+`lake build UproveComparison` is optional and not required for the extraction gate.
 
-The default library build includes **`Uprove.lean`** and **`UproveRegisterInit.lean`**. Examples are a separate target built with `lake build UproveExamples`.
+## Libraries
+
+| Target | Contents |
+|--------|----------|
+| `lake build Uprove` | Stable library + `UproveRegisterInit` + `TestRegisterInit` |
+| `lake build UproveExamples` | `BasicExamples`, `ManualProofs` |
+| `lake build UproveComparison` | Optional tactic comparison module |
+
+Use the repository `lean-toolchain` so Mathlib resolves consistently.

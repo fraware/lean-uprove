@@ -3,7 +3,7 @@
 
 ARG LEAN_UPROVE_VERSION=0.2.0
 
-FROM leanprover/lean4:v4.12.0 AS builder
+FROM leanprover/lean4:v4.31.0-rc1 AS builder
 WORKDIR /app
 COPY . .
 
@@ -11,7 +11,7 @@ RUN --mount=type=cache,target=/root/.cache/lean \
     --mount=type=cache,target=/app/.lake/cache \
     lake update && lake build
 
-FROM leanprover/lean4:v4.12.0 AS production
+FROM leanprover/lean4:v4.31.0-rc1 AS production
 ARG LEAN_UPROVE_VERSION=0.2.0
 ENV LEAN_UPROVE_VERSION=${LEAN_UPROVE_VERSION}
 WORKDIR /app
@@ -21,6 +21,10 @@ COPY --from=builder /app/lakefile.lean /app/lakefile.lean
 COPY --from=builder /app/lake-manifest.json /app/lake-manifest.json
 COPY --from=builder /app/lean-toolchain /app/lean-toolchain
 COPY --from=builder /app/Uprove /app/Uprove
+COPY --from=builder /app/Uprove.lean /app/Uprove.lean
+COPY --from=builder /app/UproveRegisterInit.lean /app/UproveRegisterInit.lean
+COPY --from=builder /app/TestRegisterInit.lean /app/TestRegisterInit.lean
+COPY --from=builder /app/UproveComparisonExamples.lean /app/UproveComparisonExamples.lean
 COPY --from=builder /app/examples /app/examples
 COPY --from=builder /app/Test.lean /app/Test.lean
 COPY --from=builder /app/bench /app/bench

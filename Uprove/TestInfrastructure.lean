@@ -12,7 +12,6 @@ import Mathlib.CategoryTheory.Limits.Shapes.Equalizers
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.HasPullback
 import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 import Mathlib.Data.List.Basic
-import Mathlib.Data.Nat.Defs
 import Mathlib.Data.Option.Basic
 import Mathlib.Control.Monad.Basic
 import Mathlib.Tactic.Basic

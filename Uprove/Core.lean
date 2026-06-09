@@ -43,6 +43,9 @@ structure UproveConfig where
   enableTelemetry : Bool := false
   deriving Inhabited, Repr
 
+/-- Default configuration for test executables. -/
+def testConfig : UproveConfig := {}
+
 -- State for the tactic execution
 structure UproveState where
   config : UproveConfig
