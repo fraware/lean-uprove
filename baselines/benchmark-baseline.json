@@ -3,6 +3,6 @@
   "version": 1,
   "description": "Placeholder baseline for future --check-regression; extend with p50/p95 per scenario.",
   "leanUproveVersion": "0.2.0",
-  "mathlibPin": "v4.31.0-rc1",
+  "mathlibPin": "v4.31.0",
   "metrics": []
 }

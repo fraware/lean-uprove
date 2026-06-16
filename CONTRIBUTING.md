@@ -1,11 +1,11 @@
 # Contributing to lean-uprove
 
-Thank you for contributing. This project targets **Lean 4.31** with **Mathlib v4.31.0-rc1** (see `lean-toolchain` and `lakefile.lean`).
+Thank you for contributing. This project targets **Lean 4.31** with **Mathlib v4.31.0** (see `lean-toolchain` and `lakefile.lean`).
 
 ## Getting started
 
 1. Fork and clone the repository.
-2. Use the repository `lean-toolchain` file (currently Lean 4.31.0-rc1).
+2. Use the repository `lean-toolchain` file (currently Lean 4.31.0).
 3. Build:
 
 ```bash

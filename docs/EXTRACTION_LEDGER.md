@@ -1,6 +1,6 @@
 # Universal-property extraction ledger
 
-Tracks Mathlib upstream candidates from `lean-uprove` modernization on **Lean 4.31.0-rc1** / **Mathlib v4.31.0-rc1**.
+Tracks Mathlib upstream candidates from `lean-uprove` modernization on **Lean 4.31.0** / **Mathlib v4.31.0**.
 
 | Construction | Goal shape | Manual proof | Automation proof | Missing lemma or missing documentation | Candidate Mathlib file | Review risk | Status |
 |:---|:---|:---|:---|:---|:---|:---|:---|
@@ -25,14 +25,17 @@ Tracks Mathlib upstream candidates from `lean-uprove` modernization on **Lean 4.
 |:---|:---|
 | [`docs/upstream/01-product-coproduct-examples.lean`](upstream/01-product-coproduct-examples.lean) | Lean content to adapt |
 | [`docs/upstream/01-product-coproduct-examples.md`](upstream/01-product-coproduct-examples.md) | PR title, summary, test plan |
+| [`docs/upstream/MATHLIB_LIMITS_PR_QUEUE.md`](upstream/MATHLIB_LIMITS_PR_QUEUE.md) | Ordered PR queue (U1–U5) and guidelines |
 
 ## Upstream PR order
 
-1. Mathlib **examples** for product/coproduct universal-property proofs (`limit.isLimit _` / `colimit.isColimit _` + `uniqueUpToIso`). **Draft ready** — see `docs/upstream/`.
-2. Mathlib **helper lemmas** for product/coproduct boilerplate only where examples show repeated steps.
-3. Mathlib **examples** for equalizers/coequalizers.
-4. Mathlib **examples** for pullbacks/pushouts.
-5. Mathlib **helper lemmas** only where manual proofs expose repeated boilerplate.
+See [`docs/upstream/MATHLIB_LIMITS_PR_QUEUE.md`](upstream/MATHLIB_LIMITS_PR_QUEUE.md) for the full queue. Summary:
+
+1. **U1** — Mathlib **examples** for product/coproduct (`limit.isLimit _` / `colimit.isColimit _` + `uniqueUpToIso`). **Draft ready** — see `docs/upstream/`.
+2. **U2** — equalizer/coequalizer examples.
+3. **U3** — pullback/pushout examples.
+4. **U4** — terminal/initial object examples.
+5. **U5** — helper lemmas only where manual proofs expose repeated boilerplate.
 6. Tactic discussion (`uprove` / `uprove?`) — **out of scope** for this sprint.
 
 ## Build certification

@@ -5,9 +5,9 @@
 **Universal-property proofs in Lean 4, with automation you can trace.**
 
 [![CI](https://github.com/fraware/lean-uprove/actions/workflows/ci.yml/badge.svg)](https://github.com/fraware/lean-uprove/actions/workflows/ci.yml)
-[![Lean](https://img.shields.io/badge/Lean-4.31.0--rc1-1f6feb.svg)](https://leanprover.github.io/)
+[![Lean](https://img.shields.io/badge/Lean-4.31.0-1f6feb.svg)](https://leanprover.github.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Mathlib](https://img.shields.io/badge/Mathlib-4.31.0--rc1-5c4dbf.svg)](https://github.com/leanprover-community/mathlib4)
+[![Mathlib](https://img.shields.io/badge/Mathlib-4.31.0-5c4dbf.svg)](https://github.com/leanprover-community/mathlib4)
 
 <br/>
 
