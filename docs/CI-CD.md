@@ -1,6 +1,6 @@
 # CI/CD
 
-What runs in GitHub Actions and how to mirror it locally (Lean **4.31.0-rc1** / Mathlib **v4.31.0-rc1**).
+What runs in GitHub Actions and how to mirror it locally (Lean **4.31.0** / Mathlib **v4.31.0**).
 
 ## Workflows
 

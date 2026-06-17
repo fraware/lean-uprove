@@ -10,8 +10,8 @@ The repository is strategically valuable as an internal audit tool for Mathlib c
 
 Current constraints:
 
-- Current toolchain in `lean-toolchain`: `leanprover/lean4:v4.31.0-rc1`.
-- `lakefile.lean` pins Mathlib at `v4.31.0-rc1`.
+- Current toolchain in `lean-toolchain`: `leanprover/lean4:v4.31.0`.
+- `lakefile.lean` pins Mathlib at `v4.31.0`.
 - Canonical shapes remain `limit.cone`, `colimit.cocone`, and `limit.isLimit _` on the v4.31 line.
 - The public import currently includes core logic, tactics, configuration, patterns, planner code, tracing support, examples, and test-support modules.
 

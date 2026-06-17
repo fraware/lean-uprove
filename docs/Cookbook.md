@@ -1,6 +1,6 @@
 # Uprove cookbook
 
-Recipes and patterns for **`uprove`**. This repository targets **Mathlib v4.31.0-rc1**. If your Mathlib version differs, check `examples/BasicExamples.lean`, `examples/ManualProofs.lean`, and upstream docs for naming.
+Recipes and patterns for **`uprove`**. This repository targets **Mathlib v4.31.0**. If your Mathlib version differs, check `examples/BasicExamples.lean`, `examples/ManualProofs.lean`, and upstream docs for naming.
 
 **Imports (recommended):**
 

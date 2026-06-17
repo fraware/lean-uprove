@@ -9,7 +9,7 @@ on:
     - cron: '0 2 * * *'  # Daily at 2 AM UTC
 
 env:
-  LEAN_VERSION: "4.31.0-rc1"
+  LEAN_VERSION: "4.31.0"
 
 jobs:
   benchmark:

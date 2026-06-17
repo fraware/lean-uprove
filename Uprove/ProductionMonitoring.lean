@@ -355,9 +355,9 @@ def main : IO Unit := do
 
   -- Simulate some monitoring data
   let testData := [
-    { tacticName := "uprove", executionTime := 150, stepCount := 5, success := true, goalHash := "goal_123", leanVersion := "4.31.0-rc1", mathlibVersion := "0.1.0", timestamp := 1000, memoryUsage := some 50000000, patternMatched := none, confidence := none },
-    { tacticName := "uprove", executionTime := 200, stepCount := 8, success := false, goalHash := "goal_456", leanVersion := "4.31.0-rc1", mathlibVersion := "0.1.0", timestamp := 2000, memoryUsage := some 60000000, patternMatched := none, confidence := none },
-    { tacticName := "uprove", executionTime := 100, stepCount := 3, success := true, goalHash := "goal_789", leanVersion := "4.31.0-rc1", mathlibVersion := "0.1.0", timestamp := 3000, memoryUsage := some 40000000, patternMatched := none, confidence := none }
+    { tacticName := "uprove", executionTime := 150, stepCount := 5, success := true, goalHash := "goal_123", leanVersion := "4.31.0", mathlibVersion := "0.1.0", timestamp := 1000, memoryUsage := some 50000000, patternMatched := none, confidence := none },
+    { tacticName := "uprove", executionTime := 200, stepCount := 8, success := false, goalHash := "goal_456", leanVersion := "4.31.0", mathlibVersion := "0.1.0", timestamp := 2000, memoryUsage := some 60000000, patternMatched := none, confidence := none },
+    { tacticName := "uprove", executionTime := 100, stepCount := 3, success := true, goalHash := "goal_789", leanVersion := "4.31.0", mathlibVersion := "0.1.0", timestamp := 3000, memoryUsage := some 40000000, patternMatched := none, confidence := none }
   ]
 
   -- Store test data

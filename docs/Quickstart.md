@@ -1,6 +1,6 @@
 # Quickstart
 
-Use **Lean 4.31.0-rc1** with the pinned **Mathlib** line (`v4.31.0-rc1` in `lakefile.lean`). Match your project’s `lean-toolchain` when you depend on this package.
+Use **Lean 4.31.0** with the pinned **Mathlib** line (`v4.31.0` in `lakefile.lean`). Match your project’s `lean-toolchain` when you depend on this package.
 
 ## Add as a dependency
 
