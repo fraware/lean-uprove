@@ -4,7 +4,7 @@ Part of the [Mathlib limits PR queue](MATHLIB_LIMITS_PR_QUEUE.md). **Status: ope
 
 ## Suggested PR title
 
-`CategoryTheory/Limits: add reference examples for binary products and coproducts`
+`doc(CategoryTheory/Limits): add reference examples for binary products and coproducts`
 
 ## Target file(s)
 
@@ -88,7 +88,7 @@ Repo-local handoff only — open the PR on GitHub when you are ready to contribu
 
 4. **Push and open PR** against `leanprover-community/mathlib4` `master` (or current default branch per Mathlib contribution guide).
 
-   - **Title:** `CategoryTheory/Limits: add reference examples for binary products and coproducts`
+   - **Title:** `doc(CategoryTheory/Limits): add reference examples for binary products and coproducts`
    - **Body:** state clearly that the PR is **examples-only** (four `noncomputable example` blocks, no API or automation changes). Link back to lean-uprove extraction context if useful.
 
 5. **After merge:** proceed to U2 per [`MATHLIB_LIMITS_PR_QUEUE.md`](MATHLIB_LIMITS_PR_QUEUE.md).
