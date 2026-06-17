@@ -25,9 +25,10 @@ Every queued PR through U4 is **documentation / examples only — not a theorem 
 - **Do not** upstream `uprove` or `uprove?`; Mathlib needs teachable reference patterns first.
 - Prefer one-line proofs via existing lemmas (`limit.isLimit`, `colimit.isColimit`, `uniqueUpToIso`).
 
-## U1 (next up)
+## U1 (opened)
 
-- **Suggested title:** `CategoryTheory/Limits: add reference examples for binary products and coproducts`
+- **PR:** [#40711](https://github.com/leanprover-community/mathlib4/pull/40711) — `CategoryTheory/Limits: add reference examples for binary products and coproducts`
+- **Branch:** `fraware:ct-limits-binary-product-examples`
 - **Draft:** [`01-product-coproduct-examples.lean`](01-product-coproduct-examples.lean)
 - **Handoff steps:** [Opening U1 on mathlib4](01-product-coproduct-examples.md#opening-u1-on-mathlib4)
 

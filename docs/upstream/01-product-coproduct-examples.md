@@ -1,6 +1,6 @@
 # Mathlib PR draft: binary product/coproduct examples (PR U1)
 
-Part of the [Mathlib limits PR queue](MATHLIB_LIMITS_PR_QUEUE.md). **Status: draft ready.**
+Part of the [Mathlib limits PR queue](MATHLIB_LIMITS_PR_QUEUE.md). **Status: opened [#40711](https://github.com/leanprover-community/mathlib4/pull/40711).**
 
 ## Suggested PR title
 
