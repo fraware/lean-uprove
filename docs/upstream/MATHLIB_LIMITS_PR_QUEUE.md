@@ -1,24 +1,37 @@
 # Mathlib limits upstream PR queue
 
-Ordered queue for Mathlib contributions from lean-uprove universal-property extraction. See also [`EXTRACTION_LEDGER.md`](../EXTRACTION_LEDGER.md) for proof inventory and [`README.md`](README.md) for draft files.
+Ordered queue for Mathlib contributions from lean-uprove universal-property extraction. This repo pins **Lean / Mathlib `v4.31.0`** (`lake-manifest.json`); audit every draft against that tag before opening a PR.
 
-## PR Queue Table
+Related docs: [`EXTRACTION_LEDGER.md`](../EXTRACTION_LEDGER.md) (proof inventory), [`README.md`](README.md) (draft index and local verification).
 
-| PR | Content | File target |
-|:---|:---|:---|
-| PR U1 | product/coproduct manual examples | `Mathlib/CategoryTheory/Limits/Shapes/BinaryProducts.lean` |
-| PR U2 | equalizer/coequalizer manual examples | relevant limits shape files |
-| PR U3 | pullback/pushout examples | pullback/pushout shape files |
-| PR U4 | terminal/initial object examples | terminal/initial files |
-| PR U5 | helper lemmas only after examples reveal repetition | TBD |
+## PR queue
 
-## First Mathlib PR (U1) - Documentation/Examples PR, NOT a theorem PR
+| PR | Content | Mathlib target | Draft |
+|:---|:---|:---|:---|
+| **U1** | binary product / coproduct reference examples | `Mathlib/CategoryTheory/Limits/Shapes/BinaryProducts.lean` | [`01-product-coproduct-examples.lean`](01-product-coproduct-examples.lean) · [notes](01-product-coproduct-examples.md) |
+| **U2** | equalizer / coequalizer reference examples | `Mathlib/CategoryTheory/Limits/Shapes/Equalizers.lean` | [`02-equalizer-coequalizer-examples.lean`](02-equalizer-coequalizer-examples.lean) · [notes](02-equalizer-coequalizer-examples.md) |
+| **U3** | pullback / pushout reference examples | `Mathlib/CategoryTheory/Limits/Shapes/Pullback/HasPullback.lean` | [`03-pullback-pushout-examples.lean`](03-pullback-pushout-examples.lean) · [notes](03-pullback-pushout-examples.md) |
+| **U4** | terminal / initial object reference examples | `Mathlib/CategoryTheory/Limits/Shapes/Terminal.lean` | [`04-terminal-initial-examples.lean`](04-terminal-initial-examples.lean) · [notes](04-terminal-initial-examples.md) |
+| **U5** | helper lemmas only where repetition is proven | TBD | **TBD** — see [U5 criteria](#pr-u5-criteria) |
+
+Submit in order **U1 → U2 → U3 → U4**. Open **U5** only after U1–U4 merge and maintainer feedback.
+
+## Examples-only policy
+
+Every queued PR through U4 is **documentation / examples only — not a theorem PR**.
+
+- Use `noncomputable example` blocks inside `section ReferenceExamples` (see draft `.lean` files).
+- **Do not** add automation, attributes, tactic hooks, or new API surface.
+- **Do not** upstream `uprove` or `uprove?`; Mathlib needs teachable reference patterns first.
+- Prefer one-line proofs via existing lemmas (`limit.isLimit`, `colimit.isColimit`, `uniqueUpToIso`).
+
+## U1 (next up)
 
 - **Suggested title:** `CategoryTheory/Limits: add reference examples for binary products and coproducts`
-- Add small, safe, useful reference examples that teach maintainers the project is disciplined.
-- **Do not** add automation, attributes, or tactic hooks in Mathlib PRs.
+- **Draft:** [`01-product-coproduct-examples.lean`](01-product-coproduct-examples.lean)
+- **Handoff steps:** [Opening U1 on mathlib4](01-product-coproduct-examples.md#opening-u1-on-mathlib4)
 
-### Product example
+Canonical proof pattern (product; coproduct is analogous):
 
 ```lean
 noncomputable example (X Y : C) [HasBinaryProduct X Y] :
@@ -26,34 +39,35 @@ noncomputable example (X Y : C) [HasBinaryProduct X Y] :
   limit.isLimit (pair X Y)
 ```
 
-### Coproduct example
+Uniqueness examples use `hc.uniqueUpToIso (limit.isLimit …)` (or the colimit dual).
 
-```lean
-noncomputable example (X Y : C) [HasBinaryCoproduct X Y] :
-    IsColimit (colimit.cocone (pair X Y)) :=
-  colimit.isColimit (pair X Y)
-```
+## After U1 merges
 
-Uniqueness examples may follow the same `example` pattern using `uniqueUpToIso`.
+1. **U2** — paste [`02-equalizer-coequalizer-examples.lean`](02-equalizer-coequalizer-examples.lean) into `Equalizers.lean` (equalizers and coequalizers share one module in v4.31.0).
+2. **U3** — paste [`03-pullback-pushout-examples.lean`](03-pullback-pushout-examples.lean) into `Pullback/HasPullback.lean` (pullbacks and pushouts share one module).
+3. **U4** — paste [`04-terminal-initial-examples.lean`](04-terminal-initial-examples.lean) into `Terminal.lean` (terminal and initial objects share one module).
+4. **U5** — helper lemmas only where manual proofs show repeated boilerplate; scope agreed with reviewers.
 
-### Draft artifacts for U1
+## PR U5 criteria
 
-| Artifact | Path |
-|:---|:---|
-| Lean draft | [`01-product-coproduct-examples.lean`](01-product-coproduct-examples.lean) |
-| PR notes | [`01-product-coproduct-examples.md`](01-product-coproduct-examples.md) |
+Do **not** invent lemmas speculatively. A candidate U5 item must satisfy **all** of:
 
-## Second Mathlib PR and beyond
-
-After PR U1 merges, submit contributions in this order:
-
-1. **U2** — equalizer/coequalizer manual examples (`Mathlib/CategoryTheory/Limits/Shapes/Equalizers.lean`, `Mathlib/CategoryTheory/Limits/Shapes/Coequalizers.lean`).
-2. **U3** — pullback/pushout examples (`Mathlib/CategoryTheory/Limits/Shapes/Pullbacks.lean`, `Mathlib/CategoryTheory/Limits/Shapes/Pushouts.lean`).
-3. **U4** — terminal/initial object examples (`Mathlib/CategoryTheory/Limits/Shapes/Terminal.lean`, `Mathlib/CategoryTheory/Limits/Shapes/Initial.lean`).
-4. **U5** — helper lemmas **only** where manual proofs in this repo show repeated boilerplate; scope TBD per review.
+- The same proof step appears in multiple upstream examples or in lean-uprove manual proofs with no meaningful variation.
+- A small named lemma shortens examples without hiding the universal-property idea.
+- The lemma is not already available under another name in Mathlib.
+- Scope is agreed with a Mathlib reviewer before opening the PR.
 
 ## Verification before opening a Mathlib PR
 
-1. Audit the draft against current Mathlib on your Mathlib branch.
-2. Confirm proofs in this repo still compile: `scripts/verify-gate1.sh` (or `.bat` on Windows).
-3. Cross-check names with `examples/BasicExamples.lean` and `examples/ManualProofs.lean`.
+Run these checks in lean-uprove **before** copying a draft into a Mathlib fork:
+
+1. Typecheck all draft patterns locally:
+
+   ```bash
+   lake env lean docs/upstream/_verify_upstream_examples.lean
+   ```
+
+2. Confirm the main example library still builds: `lake build UproveExamples`.
+3. Run the repo gate: `scripts/verify-gate1.sh` (or `.bat` on Windows).
+4. Cross-check names with [`examples/BasicExamples.lean`](../../examples/BasicExamples.lean) and [`examples/ManualProofs.lean`](../../examples/ManualProofs.lean).
+5. On your Mathlib fork at tag `v4.31.0`, paste the draft `section ReferenceExamples`, then `lake build` the touched module (or full Mathlib).

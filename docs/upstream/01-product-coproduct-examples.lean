@@ -2,9 +2,13 @@
 Copyright (c) 2026 lean-uprove contributors.
 Released under Apache 2.0 license as described in the file LICENSE.
 
-! This file is an **upstream draft** for mathlib4. It is not part of the Lake build.
-! Adapt the module header and namespace to match Mathlib conventions before opening a PR.
-! Source of truth in lean-uprove: `examples/BasicExamples.lean`, `examples/ManualProofs.lean`.
+! Upstream draft for mathlib4 — not part of the Lake build.
+!
+! Target file: `Mathlib/CategoryTheory/Limits/Shapes/BinaryProducts.lean`
+! Paste context: inside `namespace CategoryTheory.Limits`, before the final
+! `end CategoryTheory.Limits`. That file already has `open CategoryTheory` and
+! imports `HasLimits` / terminal shapes; no new imports should be required.
+! Source patterns: `examples/BasicExamples.lean`, `examples/ManualProofs.lean`.
 -/
 
 import Mathlib.CategoryTheory.Limits.Shapes.BinaryProducts
@@ -19,11 +23,13 @@ alternative (co)limit cones are unique up to isomorphism.
 These patterns are the first Mathlib upstream target from lean-uprove extraction (PR U1).
 -/
 
-namespace CategoryTheory.Limits.Examples
+namespace CategoryTheory.Limits
 
 universe u v
 
 variable {C : Type u} [Category.{v} C]
+
+section ReferenceExamples
 
 /-- The canonical cone for a binary product diagram is a limit. -/
 noncomputable example (X Y : C) [HasBinaryProduct X Y] :
@@ -45,4 +51,6 @@ noncomputable example (X Y : C) [HasBinaryCoproduct X Y] {c : Cocone (pair X Y)}
     c ≅ colimit.cocone (pair X Y) :=
   hc.uniqueUpToIso (colimit.isColimit (pair X Y))
 
-end CategoryTheory.Limits.Examples
+end ReferenceExamples
+
+end CategoryTheory.Limits
