@@ -10,22 +10,24 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Set up Lean 4
+      uses: leanprover/lean4-action@v2
+      with:
+        lean-version: v4.34.0-rc2
 
     - name: Cache Lake
       uses: actions/cache@v4
       with:
         path: |
           .lake
-        key: lake-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
+        key: lake-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lakefile.lean', 'lake-manifest.json') }}
         restore-keys: |
           lake-${{ runner.os }}-
-
-    - name: Set up Lean 4
-      uses: leanprover/lean4@v4.34.0-rc2
 
     - name: Install dependencies
       run: |
@@ -45,22 +47,24 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: test
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Set up Lean 4
+      uses: leanprover/lean4-action@v2
+      with:
+        lean-version: v4.34.0-rc2
 
     - name: Cache Lake
       uses: actions/cache@v4
       with:
         path: |
           .lake
-        key: lake-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
+        key: lake-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lakefile.lean', 'lake-manifest.json') }}
         restore-keys: |
           lake-${{ runner.os }}-
-
-    - name: Set up Lean 4
-      uses: leanprover/lean4@v4.34.0-rc2
 
     - name: Build
       run: |
@@ -80,21 +84,21 @@ jobs:
     name: Docker Build
     runs-on: ubuntu-latest
     needs: [test, build]
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-      
+
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-        
+
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
@@ -106,7 +110,7 @@ jobs:
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
           type=raw,value=latest,enable={{is_default_branch}}
-          
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
@@ -122,19 +126,21 @@ jobs:
     name: Validate Installation
     runs-on: ubuntu-latest
     needs: [test, build]
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      
+
     - name: Set up Lean 4
-      uses: leanprover/lean4@v4.34.0-rc2
-      
+      uses: leanprover/lean4-action@v2
+      with:
+        lean-version: v4.34.0-rc2
+
     - name: Test installation script
       run: |
         chmod +x scripts/install.sh
         ./scripts/install.sh --help
-        
+
     - name: Test Makefile
       run: |
         make help
