@@ -142,6 +142,9 @@ jobs:
         "$HOME/.elan/bin/elan" install "$(cat lean-toolchain)"
         "$HOME/.elan/bin/elan" default "$(cat lean-toolchain)"
 
+    - name: Refresh dependencies
+      run: lake update
+
     - name: Test installation script
       run: |
         chmod +x scripts/install.sh
