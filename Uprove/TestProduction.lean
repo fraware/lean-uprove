@@ -42,46 +42,49 @@ structure TestSuite where
   slaCompliant : Bool
   deriving Inhabited, Repr
 
--- Real performance measurement
-def measurePerformance (testName : String) (goal : Lean.Expr) (config : UproveConfig) : IO TestResult := do
+-- Linux resident-memory sampling. An absent metric is a test error, never a
+-- fabricated zero. RSS is the process's resident set at the sampling instant,
+-- not peak allocated memory and not memory uniquely attributable to a tactic.
+private def readResidentBytes : IO Nat := do
+  let status ← IO.FS.readFile "/proc/self/status"
+  let line? := (status.splitOn "\n").find? (fun line => line.startsWith "VmRSS:")
+  match line? with
+  | none => throw <| IO.userError "VmRSS unavailable in /proc/self/status"
+  | some line =>
+    let fields := (line.replace "\t" " ").splitOn " "
+    match (fields.filterMap String.toNat?).head? with
+    | none => throw <| IO.userError "invalid VmRSS in /proc/self/status"
+    | some kib => pure (kib * 1024)
+
+-- Measure registry pattern recognition, NOT proof execution. The reported
+-- success denotes a matched registered pattern only.
+def measurePerformance (testName : String) (goal : Lean.Expr)
+    (_config : UproveConfig) : IO TestResult := do
   let startTime ← IO.monoMsNow
-  let startMemory ← IO.getMemoryUsage
-
+  let startMemory ← readResidentBytes
   try
-    -- Simulate real tactic execution
-    let patterns ← unsafeIO getRegisteredPatterns
+    let patterns ← getRegisteredPatterns
     let matchResult := matchUniversalProperty goal patterns
-
     let endTime ← IO.monoMsNow
-    let endMemory ← IO.getMemoryUsage
-
-    let duration := (endTime - startTime).toNat
-    let memory := (endMemory - startMemory).toNat
-
+    let memory ← readResidentBytes
     let (success, patternMatched, confidence) := match matchResult with
-    | some pm => (true, some pm.up.name, some pm.confidence)
-    | none => (false, none, none)
-
+      | some pm => (true, some pm.up.name, some pm.confidence)
+      | none => (false, none, none)
     pure {
-      testName := testName
+      name := testName
       success := success
-      duration := duration
+      duration := endTime - startTime
       memory := memory
       patternMatched := patternMatched
       confidence := confidence
     }
   catch e =>
     let endTime ← IO.monoMsNow
-    let endMemory ← IO.getMemoryUsage
-
-    let duration := (endTime - startTime).toNat
-    let memory := (endMemory - startMemory).toNat
-
     pure {
-      testName := testName
+      name := testName
       success := false
-      duration := duration
-      memory := memory
+      duration := endTime - startTime
+      memory := startMemory
       error := some e.toString
     }
 
@@ -107,9 +110,9 @@ def runP0Tests (config : UproveConfig) : IO (List TestResult) := do
     results := result :: results
 
     if result.success then
-      IO.println s!"  ✅ {testName}: {result.duration}ms, {result.memory} bytes"
+      IO.println s!"  ✅ {testName}: {result.duration}ms, {result.memory} resident-RSS bytes"
     else
-      IO.println s!"  ❌ {testName}: {result.error.getD 'Unknown error'}"
+      IO.println s!"  ❌ {testName}: {result.error.getD "No registered pattern matched"}"
 
   pure results.reverse
 
@@ -131,9 +134,9 @@ def runP1Tests (config : UproveConfig) : IO (List TestResult) := do
     results := result :: results
 
     if result.success then
-      IO.println s!"  ✅ {testName}: {result.duration}ms, {result.memory} bytes"
+      IO.println s!"  ✅ {testName}: {result.duration}ms, {result.memory} resident-RSS bytes"
     else
-      IO.println s!"  ❌ {testName}: {result.error.getD 'Unknown error'}"
+      IO.println s!"  ❌ {testName}: {result.error.getD "No registered pattern matched"}"
 
   pure results.reverse
 
@@ -152,7 +155,7 @@ def runNondeterminismTests (config : UproveConfig) : IO (List TestResult) := do
     if result.success then
       IO.println s!"  ✅ Iteration {i}: {result.duration}ms"
     else
-      IO.println s!"  ❌ Iteration {i}: {result.error.getD 'Unknown error'}"
+      IO.println s!"  ❌ Iteration {i}: {result.error.getD "No registered pattern matched"}"
 
   pure results.reverse
 
@@ -252,14 +255,14 @@ def generateTestReport (suite : TestSuite) : String :=
   s!"  P95: {suite.p95}ms\n" ++
   s!"  P99: {suite.p99}ms\n\n" ++
   s!"Memory usage:\n" ++
-  s!"  Max: {suite.maxMemory / (1024 * 1024)}MB\n" ++
-  s!"  Average: {suite.avgMemory / (1024 * 1024)}MB\n\n" ++
+  s!"  Max sampled RSS: {suite.maxMemory / (1024 * 1024)}MB\n" ++
+  s!"  Average sampled RSS: {suite.avgMemory / (1024 * 1024)}MB\n\n" ++
   s!"SLA Compliance:\n" ++
-  s!"  P50 ≤ 150ms: {'✅' if suite.p50 ≤ 150 else '❌'} ({suite.p50}ms)\n" ++
-  s!"  P95 ≤ 800ms: {'✅' if suite.p95 ≤ 800 else '❌'} ({suite.p95}ms)\n" ++
-  s!"  Memory ≤ 256MB: {'✅' if suite.maxMemory ≤ 256 * 1024 * 1024 else '❌'} ({suite.maxMemory / (1024 * 1024)}MB)\n" ++
-  s!"  100% Success Rate: {'✅' if suite.successCount == suite.results.length else '❌'} ({suite.successCount}/{suite.results.length})\n\n" ++
-  s!"Overall SLA Compliance: {'✅' if suite.slaCompliant else '❌'}\n"
+  s!"  P50 ≤ 150ms: {if suite.p50 ≤ 150 then "PASS" else "FAIL"} ({suite.p50}ms)\n" ++
+  s!"  P95 ≤ 800ms: {if suite.p95 ≤ 800 then "PASS" else "FAIL"} ({suite.p95}ms)\n" ++
+  s!"  Sampled resident RSS ≤ 256MB: {if suite.maxMemory ≤ 256 * 1024 * 1024 then "PASS" else "FAIL"} ({suite.maxMemory / (1024 * 1024)}MB)\n" ++
+  s!"  100% Success Rate: {if suite.successCount == suite.results.length then "PASS" else "FAIL"} ({suite.successCount}/{suite.results.length})\n\n" ++
+  s!"Overall SLA Compliance: {if suite.slaCompliant then "PASS" else "FAIL"}\n"
 
 -- Main test runner
 def main : IO Unit := do
@@ -269,10 +272,10 @@ def main : IO Unit := do
   IO.println report
 
   if suite.slaCompliant then
-    IO.println "🎉 All tests passed! Production ready!"
-    IO.exit 0
+    IO.println "Pattern recognition and sampled RSS thresholds passed; no proof execution was checked"
+    IO.Process.exit 0
   else
-    IO.println "⚠️  Some tests failed. Not production ready."
-    IO.exit 1
+    IO.println "Pattern-recognition or sampled RSS thresholds failed"
+    IO.Process.exit 1
 
 end Uprove
