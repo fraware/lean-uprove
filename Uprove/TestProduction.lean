@@ -187,13 +187,13 @@ def runPerformanceTests (config : UproveConfig) : IO (List TestResult) := do
 def calculateStatistics (results : List TestResult) : (Nat × Nat × Nat × Nat × Nat × Bool) :=
   let durations := results.map (·.duration)
   let memories := results.map (·.memory)
-  let sortedDurations := durations.qsort (· < ·)
+  let sortedDurations := durations.mergeSort (· < ·)
 
   let p50 := if sortedDurations.length > 0 then sortedDurations[sortedDurations.length / 2]! else 0
   let p95 := if sortedDurations.length > 0 then sortedDurations[(sortedDurations.length * 95) / 100]! else 0
   let p99 := if sortedDurations.length > 0 then sortedDurations[(sortedDurations.length * 99) / 100]! else 0
 
-  let maxMemory := if memories.length > 0 then memories.maximum.getD 0 else 0
+  let maxMemory := memories.foldl Nat.max 0
   let avgMemory := if memories.length > 0 then memories.foldl (· + ·) 0 / memories.length else 0
 
   let slaCompliant := p50 ≤ 150 && p95 ≤ 800 && maxMemory ≤ 256 * 1024 * 1024 && results.all (·.success)
