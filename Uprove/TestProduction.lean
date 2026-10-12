@@ -238,8 +238,8 @@ def runTestSuite (config : UproveConfig) : IO TestSuite := do
   -- Combine all results
   let allResults := p0Results ++ p1Results ++ nondetResults ++ perfResults
   let totalDuration := allResults.foldl (· + ·.duration) 0
-  let successCount := allResults.filter (·.success).length
-  let failureCount := allResults.length - successCount
+  let successCount : Nat := (allResults.filter (fun result : TestResult => result.success)).length
+  let failureCount : Nat := allResults.length - successCount
 
   let (p50, p95, p99, maxMemory, avgMemory, slaCompliant) := calculateStatistics allResults
 
