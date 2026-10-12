@@ -43,9 +43,9 @@ structure TestSuite where
   slaCompliant : Bool
   deriving Inhabited, Repr
 
--- Linux resident-memory sampling. An absent metric is a test error, never a
--- fabricated zero. RSS is the process's resident set at the sampling instant,
--- not peak allocated memory and not memory uniquely attributable to a tactic.
+-- Linux RSS sampling. An absent metric is a test error. The measured quantity
+-- is nonnegative net RSS growth between samples, not peak memory or uniquely
+-- attributable allocation.
 private def readResidentBytes : IO Nat := do
   let status ← IO.FS.readFile "/proc/self/status"
   let line? := (status.splitOn "\n").find? (fun line => line.startsWith "VmRSS:")
@@ -57,8 +57,8 @@ private def readResidentBytes : IO Nat := do
     | none => throw <| IO.userError "invalid VmRSS in /proc/self/status"
     | some kib => pure (kib * 1024)
 
--- Measure registry pattern recognition, NOT proof execution. The reported
--- success denotes a matched registered pattern only.
+-- Evaluate whether a registered-pattern match agrees with the declared
+-- expectation (including negative controls). This does not execute proofs.
 def measurePerformance (testName : String) (goal : Lean.Expr)
     (_config : UproveConfig) (expectedMatch : Bool := true) : IO TestResult := do
   let startTime ← IO.monoMsNow
