@@ -297,3 +297,6 @@ def main : IO Unit := do
     IO.Process.exit 1
 
 end Uprove
+
+-- Lake's native executable links the top-level entry point.
+def main : IO Unit := Uprove.main
