@@ -1,3 +1,4 @@
+import UproveRegisterInit
 import Uprove.Core
 import Uprove.Configuration
 import Uprove.Patterns
@@ -22,7 +23,7 @@ structure TestResult where
   name : String
   success : Bool
   duration : Nat -- milliseconds
-  memory : Nat -- bytes
+  memory : Nat -- nonnegative net resident-RSS growth in bytes
   error : Option String := none
   patternMatched : Option String := none
   confidence : Option Float := none
@@ -59,7 +60,7 @@ private def readResidentBytes : IO Nat := do
 -- Measure registry pattern recognition, NOT proof execution. The reported
 -- success denotes a matched registered pattern only.
 def measurePerformance (testName : String) (goal : Lean.Expr)
-    (_config : UproveConfig) : IO TestResult := do
+    (_config : UproveConfig) (expectedMatch : Bool := true) : IO TestResult := do
   let startTime ← IO.monoMsNow
   let startMemory ← readResidentBytes
   try
@@ -67,24 +68,29 @@ def measurePerformance (testName : String) (goal : Lean.Expr)
     let matchResult := matchUniversalProperty goal patterns
     let endTime ← IO.monoMsNow
     let memory ← readResidentBytes
-    let (success, patternMatched, confidence) := match matchResult with
-      | some pm => (true, some pm.up.name, some pm.confidence)
-      | none => (false, none, none)
+    let observedMatch := matchResult.isSome
+    let success := observedMatch == expectedMatch
+    let (patternMatched, confidence) := match matchResult with
+      | some pm => (some pm.up.name, some pm.confidence)
+      | none => (none, none)
     pure {
       name := testName
       success := success
       duration := endTime - startTime
-      memory := memory
+      memory := memory - startMemory
+      error := if success then none
+        else some s!"expected pattern match = {expectedMatch}, observed = {observedMatch}"
       patternMatched := patternMatched
       confidence := confidence
     }
   catch e =>
     let endTime ← IO.monoMsNow
+    let endMemory ← readResidentBytes
     pure {
       name := testName
       success := false
       duration := endTime - startTime
-      memory := startMemory
+      memory := endMemory - startMemory
       error := some e.toString
     }
 
@@ -110,7 +116,7 @@ def runP0Tests (config : UproveConfig) : IO (List TestResult) := do
     results := result :: results
 
     if result.success then
-      IO.println s!"  ✅ {testName}: {result.duration}ms, {result.memory} resident-RSS bytes"
+      IO.println s!"  ✅ {testName}: {result.duration}ms, {result.memory} net RSS-growth bytes"
     else
       IO.println s!"  ❌ {testName}: {result.error.getD "No registered pattern matched"}"
 
@@ -119,22 +125,23 @@ def runP0Tests (config : UproveConfig) : IO (List TestResult) := do
 -- P1 Advanced Tests
 def runP1Tests (config : UproveConfig) : IO (List TestResult) := do
   let tests := [
-    ("Finite Cone", Lean.mkConst ``CategoryTheory.Limits.IsLimit),
-    ("Finite Cocone", Lean.mkConst ``CategoryTheory.Limits.IsColimit),
-    ("Functor Basic", Lean.mkConst ``CategoryTheory.Functor),
-    ("Natural Transformation", Lean.mkConst ``CategoryTheory.NatTrans),
-    ("Complex Product", Lean.mkConst ``CategoryTheory.Limits.IsLimit)
+    ("Finite Cone", Lean.mkConst ``CategoryTheory.Limits.IsLimit, true),
+    ("Finite Cocone", Lean.mkConst ``CategoryTheory.Limits.IsColimit, true),
+    -- Explicit negative controls: these heads are not universal-property patterns.
+    ("Functor Basic", Lean.mkConst ``CategoryTheory.Functor, false),
+    ("Natural Transformation", Lean.mkConst ``CategoryTheory.NatTrans, false),
+    ("Complex Product", Lean.mkConst ``CategoryTheory.Limits.IsLimit, true)
   ]
 
   let mut results : List TestResult := []
 
-  for (testName, goal) in tests do
+  for (testName, goal, expectedMatch) in tests do
     IO.println s!"Testing {testName}..."
-    let result ← measurePerformance testName goal config
+    let result ← measurePerformance testName goal config expectedMatch
     results := result :: results
 
     if result.success then
-      IO.println s!"  ✅ {testName}: {result.duration}ms, {result.memory} resident-RSS bytes"
+      IO.println s!"  ✅ {testName}: {result.duration}ms, {result.memory} net RSS-growth bytes"
     else
       IO.println s!"  ❌ {testName}: {result.error.getD "No registered pattern matched"}"
 
@@ -255,12 +262,12 @@ def generateTestReport (suite : TestSuite) : String :=
   s!"  P95: {suite.p95}ms\n" ++
   s!"  P99: {suite.p99}ms\n\n" ++
   s!"Memory usage:\n" ++
-  s!"  Max sampled RSS: {suite.maxMemory / (1024 * 1024)}MB\n" ++
-  s!"  Average sampled RSS: {suite.avgMemory / (1024 * 1024)}MB\n\n" ++
+  s!"  Max observed net RSS growth: {suite.maxMemory / (1024 * 1024)}MB\n" ++
+  s!"  Average observed net RSS growth: {suite.avgMemory / (1024 * 1024)}MB\n\n" ++
   s!"SLA Compliance:\n" ++
   s!"  P50 ≤ 150ms: {if suite.p50 ≤ 150 then "PASS" else "FAIL"} ({suite.p50}ms)\n" ++
   s!"  P95 ≤ 800ms: {if suite.p95 ≤ 800 then "PASS" else "FAIL"} ({suite.p95}ms)\n" ++
-  s!"  Sampled resident RSS ≤ 256MB: {if suite.maxMemory ≤ 256 * 1024 * 1024 then "PASS" else "FAIL"} ({suite.maxMemory / (1024 * 1024)}MB)\n" ++
+  s!"  Observed net RSS growth ≤ 256MB: {if suite.maxMemory ≤ 256 * 1024 * 1024 then "PASS" else "FAIL"} ({suite.maxMemory / (1024 * 1024)}MB)\n" ++
   s!"  100% Success Rate: {if suite.successCount == suite.results.length then "PASS" else "FAIL"} ({suite.successCount}/{suite.results.length})\n\n" ++
   s!"Overall SLA Compliance: {if suite.slaCompliant then "PASS" else "FAIL"}\n"
 
@@ -272,10 +279,10 @@ def main : IO Unit := do
   IO.println report
 
   if suite.slaCompliant then
-    IO.println "Pattern recognition and sampled RSS thresholds passed; no proof execution was checked"
+    IO.println "Registry recognition and observed RSS-growth thresholds passed; no proof execution was checked"
     IO.Process.exit 0
   else
-    IO.println "Pattern-recognition or sampled RSS thresholds failed"
+    IO.println "Registry-recognition or observed RSS-growth thresholds failed"
     IO.Process.exit 1
 
 end Uprove
