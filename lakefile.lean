@@ -5,8 +5,9 @@ package «lean-uprove» where
   moreServerOptions := #[⟨`autoImplicit, false⟩]
   moreLeanArgs := #["-DautoImplicit=false"]
 
+-- Audit baseline: Mathlib master on 2026-08-24.
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4.git" @ "v4.31.0"
+  "https://github.com/leanprover-community/mathlib4.git" @ "dc84fcbe9e049439c1c36d6db290cc0565f77788"
 
 @[default_target]
 lean_lib «Uprove» where
@@ -33,7 +34,9 @@ lean_exe «uprove-benchmark» where
 
 lean_exe «uprove-test-production» where
   root := `Uprove.TestProduction
-  supportInterpreter := true
+  -- Compile and execute the native binary. Interpreter support triggers
+  -- Lean 4.34.0-rc2's IR interpreter assertion on this test module.
+  supportInterpreter := false
 
 lean_exe «uprove-performance-validation» where
   root := `Uprove.PerformanceValidation
