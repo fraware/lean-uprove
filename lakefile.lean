@@ -34,7 +34,9 @@ lean_exe «uprove-benchmark» where
 
 lean_exe «uprove-test-production» where
   root := `Uprove.TestProduction
-  supportInterpreter := true
+  -- Compile and execute the native binary. Interpreter support triggers
+  -- Lean 4.34.0-rc2's IR interpreter assertion on this test module.
+  supportInterpreter := false
 
 lean_exe «uprove-performance-validation» where
   root := `Uprove.PerformanceValidation
