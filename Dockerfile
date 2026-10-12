@@ -3,7 +3,22 @@
 
 ARG LEAN_UPROVE_VERSION=0.2.0
 
-FROM leanprover/lean4:v4.34.0-rc2 AS builder
+# Install the repository-pinned Lean release; the old leanprover/lean4 image tag is unavailable.
+FROM ubuntu:24.04 AS lean-base
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl git build-essential zstd \
+    && rm -rf /var/lib/apt/lists/*
+ENV PATH="/root/.elan/bin:${PATH}"
+WORKDIR /app
+COPY lean-toolchain ./lean-toolchain
+RUN curl -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+    | sh -s -- -y --default-toolchain none \
+    && elan toolchain install "$(head -n 1 lean-toolchain)" \
+    && elan default "$(head -n 1 lean-toolchain)" \
+    && lake --version
+
+FROM lean-base AS builder
 WORKDIR /app
 COPY . .
 
@@ -11,7 +26,7 @@ RUN --mount=type=cache,target=/root/.cache/lean \
     --mount=type=cache,target=/app/.lake/cache \
     lake update && lake build
 
-FROM leanprover/lean4:v4.34.0-rc2 AS production
+FROM lean-base AS production
 ARG LEAN_UPROVE_VERSION=0.2.0
 ENV LEAN_UPROVE_VERSION=${LEAN_UPROVE_VERSION}
 WORKDIR /app
