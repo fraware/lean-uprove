@@ -1,4 +1,3 @@
-import UproveRegisterInit
 import Uprove.Core
 import Uprove.Configuration
 import Uprove.Patterns
@@ -93,6 +92,17 @@ def measurePerformance (testName : String) (goal : Lean.Expr)
       memory := endMemory - startMemory
       error := some e.toString
     }
+
+-- Register the actual production pattern definitions at executable runtime.
+-- This avoids invoking the mathlib-dependent UproveRegisterInit initializers during
+-- compilation of this standalone test executable. A match is not a proof.
+private def registerProductionPatterns : IO Unit := do
+  for pat in #[
+    productPattern, coproductPattern, equalizerPattern,
+    coequalizerPattern, pullbackPattern, pushoutPattern,
+    terminalPattern, initialPattern, isomorphismPattern
+  ] do
+    registerPattern pat
 
 -- P0 Golden Suite Tests
 def runP0Tests (config : UproveConfig) : IO (List TestResult) := do
@@ -273,6 +283,7 @@ def generateTestReport (suite : TestSuite) : String :=
 
 -- Main test runner
 def main : IO Unit := do
+  registerProductionPatterns
   let config := testConfig
   let suite ← runTestSuite config
   let report := generateTestReport suite
